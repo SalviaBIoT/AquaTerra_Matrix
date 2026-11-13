@@ -6,12 +6,15 @@
 
 ---
 
+> 🧭 **Documento Rector del Sistema (`v4.0` $\to$ `v5.0 Final`):** **[`ARQUITECTURA_MAESTRA_BRUJULA.md`](ARQUITECTURA_MAESTRA_BRUJULA.md)** — Contiene el catálogo completo de variables de todas las familias de estaciones (`Nodo INTI`, `InBeersa`, `Sigatoka`, `Conservación Polylepis`), la auditoría forense de 8 modos de fallo y el plan de ejecución del Backend (`Fases B1 -> B5`).
+
 ## 1. Propósito de este Directorio
 Esta carpeta (`DEVELOP/`) es la **bitácora viva de arquitectura, mejoras, decisiones técnicas y propuestas** de **AquaTerra Matrix**. Cada avance, refactorización o nuevo módulo queda registrado con trazabilidad completa hacia el código fuente y las pruebas automatizadas (`tests/`).
 
 ```text
 DEVELOP/
 ├── README.md                                                    # Este índice maestro de trazabilidad
+├── ARQUITECTURA_MAESTRA_BRUJULA.md                              # Brújula Maestra v4.0 -> v5.0 (Variables, Riesgos y Backend)
 ├── reportes/                                                    # Reportes paso a paso de cada fase ejecutada
 │   ├── REP-000_migracion_semilla_y_entorno.md                   # Fase 0: Semilla v3.2, Git, .venv y diagnóstico
 │   └── REP-001_arquitectura_v4_y_resolucion_deuda_tecnica.md    # Fase 1: Arquitectura 4 capas, SQLite WAL y DT-01..05
