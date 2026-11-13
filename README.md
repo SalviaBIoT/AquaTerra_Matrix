@@ -2,7 +2,7 @@
 
 **Ecosistema:** TerraBit Agrotech & Conservación (Semilleros Kilby & MUCEM — Universidad Tecnológica de Pereira)  
 **Autor y Arquitecto de Software:** Daniel Felipe Duque Lizarralde  
-**Versión Actual:** `v3.2.0-legacy` (En transición hacia `v4.0.0 Core SQLite & IoT Ingest`)  
+**Versión Actual:** `v4.0.0a1` (Core SQLite WAL + Arquitectura en 4 Capas + Adaptadores IoT)  
 
 ---
 
@@ -17,44 +17,57 @@ Integra bajo una sola arquitectura de software:
 
 ---
 
-## 2. Estructura del Proyecto
+## 2. Arquitectura y Estructura del Repositorio
 
 ```text
 AquaTerra_Matrix/
-├── assets/                  # Recursos gráficos de interfaz (fondos, iconos)
-├── data/                    # Capa de persistencia (v3.2 CSV/JSON -> v4.0 SQLite WAL)
-├── docs/                    # Documentación de arquitectura, manuales y diagramas
-├── legacy/
-│   └── aquautp_v3.2/        # Respaldo histórico inmutable de la base v3.2
-├── models/                  # Capa de dominio y acceso a datos (GestorDatos, Auth)
-├── views/                   # Vistas gráficas (ttkbootstrap + Matplotlib TkAgg)
-├── main.py                  # Punto de entrada de la aplicación
-├── requirements.txt         # Dependencias del entorno virtual (.venv)
-├── CHANGELOG_INGENIERIA.md  # Bitácora forense de auditoría, deuda técnica y versiones
-└── README.md                # Documentación general del repositorio
+├── aquaterra/                        # Paquete principal en 4 capas (Clean Architecture)
+│   ├── core/                         # Dominio puro y ciencia agronómica (Cero I/O)
+│   │   ├── domain/                   # Entidades inmutables, validadores y errores
+│   │   ├── agronomia/                # Psicrometría (VPD Tetens FAO-56) y balance hídrico
+│   │   └── tiempo.py                 # Estandarización ISO-8601 (UTC-05:00) + Unix Epoch
+│   ├── application/                  # Casos de uso, permisos, transacciones y contenedor DI
+│   ├── infrastructure/               # Adaptadores técnicos
+│   │   ├── db/                       # Motor SQLite3 (modo WAL), migraciones y repositorios
+│   │   ├── seguridad/                # Hashing PBKDF2-HMAC-SHA256 (600,000 iteraciones + salt)
+│   │   ├── legacy/                   # Migrador atómico desde AquaUTP v3.2
+│   │   └── iot_ingest/               # Parsers para Nodo INTI (CSV), InBeersa (JSONL) y Ubidots
+│   └── ui/                           # Interfaz ttkbootstrap con raíz única y Matplotlib OO
+├── DEVELOP/                          # Centro de Trazabilidad (Reportes, ADRs y Propuestas)
+│   ├── README.md                     # Índice maestro y matriz de deuda técnica
+│   ├── reportes/                     # REP-000, REP-001...
+│   ├── decisiones/                   # ADR-001 a ADR-004
+│   ├── propuestas/                   # PRP-001 (Antena/Ubidots), PRP-002 (Modelo Hídrico CC/PMP)
+│   └── plantillas/                   # Plantillas estandarizadas de ingeniería
+├── scripts/                          # Utilidades CLI (migrar_legacy_v32.py)
+├── tests/                            # Suite de 47 pruebas automatizadas (pytest)
+├── legacy/aquautp_v3.2/              # Respaldo histórico inmutable de la semilla v3.2
+├── docs/                             # Documentación de telemetría y manuales originales
+├── main.py                           # Punto de entrada (también ejecutable con python -m aquaterra)
+├── pyproject.toml                    # Configuración de empaquetado, pytest y ruff
+├── requirements.txt                  # Dependencias de producción
+└── requirements-dev.txt              # Dependencias de pruebas y análisis estático
 ```
 
 ---
 
-## 3. Instalación y Ejecución Local
+## 3. Instalación, Ejecución y Pruebas
 
-### Requisitos Previos
-- **Python:** `3.11+` (recomendado `Python 3.13` 64-bit en Windows).
-
-### Configuración del Entorno Virtual (`.venv`)
 ```powershell
 # 1. Posicionarse en el directorio raíz del repositorio
 cd C:\Users\danie\Developer\AquaTerra_Matrix
 
-# 2. Crear el entorno virtual aislado
-py -3.13 -m venv .venv
-
-# 3. Activar el entorno e instalar dependencias
+# 2. Activar el entorno virtual (.venv con Python 3.13)
 .\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
 
-# 4. Ejecutar el sistema
+# 3. Ejecutar la aplicación (importa automáticamente la semilla v3.2 a SQLite en el primer arranque)
 python main.py
+# o como módulo:
+python -m aquaterra
+
+# 4. Ejecutar la suite completa de pruebas y el linter
+pytest -v
+ruff check .
 ```
 
 ---
@@ -63,10 +76,10 @@ python main.py
 
 | Versión | Nombre Clave | Alcance Técnico Principal | Estado |
 |---|---|---|---|
-| **v3.2.0** | `Legacy Seed` | Base funcional en `ttkbootstrap`, `pandas` y `matplotlib`. Congelación de respaldo histórico, entorno `.venv` y autoría unificada. | ✅ **Completado (Fase 0)** |
-| **v3.3.0** | `Integrity Patch` | Resolución de los 5 hallazgos críticos de auditoría: integridad referencial de IDs, validación de formularios, cierre de figuras Matplotlib (`plt.close`), ciclo único `mainloop()` y hashing SHA-256/PBKDF2 de credenciales. | 🚧 **En Cola (Fase 1A)** |
-| **v4.0.0** | `Core SQLite & Ingest` | Migración de CSV/JSON planos a **SQLite3 (modo WAL)** con esquema relacional (`estaciones`, `parcelas`, `telemetria_series`, `eventos_riego`, `eventos_bioacustica`). Ingestadores nativos para `/data.csv` (Nodo INTI) y `/data.json` JSONL (InBeersa). | 📋 **Planificado (Fase 1B)** |
-| **v5.0.0** | `Matrix Telemetry Hub` | Servidor local de telemetría por antena (**LoRa / ESP-NOW / WiFi LR -> Gateway Serial/MQTT Mosquitto local**), sincronización bidireccional con **Ubidots API/MQTT** (Store & Forward) y motor de alertas agronómicas ($VPD$, punto de marchitez, anomalías térmicas en colmena). | 🔭 **Horizonte (Fase 2)** |
+| **v3.2.0** | `Legacy Seed` | Congelación de respaldo histórico (`legacy/aquautp_v3.2` y tag `v3.2.0-legacy`), entorno `.venv` y autoría unificada. | ✅ **Completado ([REP-000](DEVELOP/reportes/REP-000_migracion_semilla_y_entorno.md))** |
+| **v4.0.0a1** | `Core SQLite & Clean Arch` | Re-arquitectura en 4 capas (`aquaterra/`), cierre total de deuda técnica (`DT-01` a `DT-05`), SQLite3 WAL, PBKDF2-SHA256, $VPD$ Tetens, adaptadores IoT (Nodo INTI, InBeersa, Ubidots), carpeta de trazabilidad `DEVELOP/` y 47 tests en verde. | ✅ **Completado ([REP-001](DEVELOP/reportes/REP-001_arquitectura_v4_y_resolucion_deuda_tecnica.md))** |
+| **v4.1.0** | `Station Sync & Explorer` | Vista UI de Estaciones y Series Temporales, importador visual de archivos MicroSD (`/data.csv`, `/data.json`) y sincronizador incremental con **Ubidots REST/MQTT**. | 🚧 **Siguiente ([PRP-001](DEVELOP/propuestas/PRP-001_ingesta_antena_lora_mqtt_y_ubidots.md))** |
+| **v5.0.0** | `Matrix Telemetry Hub` | Recepción local por antena (**Gateway LoRa 915 MHz / ESP-NOW LR / Broker Mosquitto local**), puente `Store & Forward` a Ubidots y modelo físico de riego por Capacidad de Campo y $VPD$. | 📋 **Planificado ([PRP-002](DEVELOP/propuestas/PRP-002_modelo_agronomico_riego_vpd_y_suelo.md))** |
 
 ---
 

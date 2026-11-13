@@ -1,0 +1,4 @@
+# Dependencias de DESARROLLO (pruebas y calidad de código).
+-r requirements.txt
+pytest>=8.0
+ruff>=0.6

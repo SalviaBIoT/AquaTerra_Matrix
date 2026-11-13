@@ -1,6 +1,7 @@
-pandas>=2.2.0
-matplotlib>=3.9.0
-ttkbootstrap>=1.10.1
-tkcalendar>=1.6.1
-openpyxl>=3.1.2
-Pillow>=10.3.0
+# Dependencias de EJECUCIÓN de AquaTerra Matrix v4.0 (Python 3.11+, probado en 3.13).
+# SQLite, hashing (hashlib) y zona horaria usan la librería estándar.
+# pandas / openpyxl / tkcalendar se retiraron: el núcleo v4.0 no los usa (ver ADR-001).
+# Se reintroducirán solo si un caso de uso concreto lo justifica (p. ej. exportación Excel).
+matplotlib>=3.9,<4
+ttkbootstrap>=1.10.1,<3
+Pillow>=10.3
