@@ -1,0 +1,28 @@
+{
+	"folders": [
+		{
+			"name": "🌊 AquaTerra Matrix - Software Central (Python)",
+			"path": "C:/Users/danie/Developer/AquaTerra_Matrix"
+		},
+		{
+			"name": "🌱 TerraBit - Firmware Nodo INTI (ESP32)",
+			"path": "C:/Users/danie/Developer/Estacion_TerraBit_Inti"
+		},
+		{
+			"name": "🐝 InBeersa - Abejas Angelitas (ESP32)",
+			"path": "C:/Users/danie/Developer/Estacion_InBeersa"
+		},
+		{
+			"name": "🍌 Sigatoka - Monitoreo Foliar (ESP32)",
+			"path": "C:/Users/danie/Developer/Estacion_Sigatoka"
+		}
+	],
+	"settings": {
+		"python.defaultInterpreterPath": "C:/Users/danie/Developer/AquaTerra_Matrix/.venv/Scripts/python.exe",
+		"python.terminal.activateEnvironment": true,
+		"files.exclude": {
+			"**/.git": false,
+			"**/__pycache__": true
+		}
+	}
+}

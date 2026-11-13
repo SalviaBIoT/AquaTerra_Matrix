@@ -1,0 +1,64 @@
+# ==============================================================================
+# .gitignore - AquaTerra Matrix (Ecosistema TerraBit & Conservación)
+# Autor: Daniel Felipe Duque Lizarralde
+# ==============================================================================
+
+# Entornos virtuales de Python
+.venv/
+venv/
+env/
+ENV/
+
+# Caché de compilación y bytecode de Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Empaquetado y distribución
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Pruebas, cobertura y análisis estático
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Bases de datos locales operativas y backups pesados (SQLite / WAL)
+*.db-journal
+*.db-shm
+*.db-wal
+data/runtime/*.db
+data/ingest_staging/
+data/audio_raw/*.wav
+
+# Credenciales, tokens IoT (Ubidots / MQTT / LoRa) y variables de entorno
+.env
+.env.*
+!*env.example
+secrets.json
+*credentials*.json
+
+# Archivos de sistema e IDE
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+*.tmp
+*.bak

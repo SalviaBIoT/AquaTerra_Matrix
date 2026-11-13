@@ -1,0 +1,16 @@
+[
+  {
+    "id": 1,
+    "usuario": "admin",
+    "pass": "1234",
+    "rol": "admin",
+    "nombre": "Daniel Felipe Duque (Admin)"
+  },
+  {
+    "id": 2,
+    "usuario": "daniel",
+    "pass": "1234",
+    "rol": "user",
+    "nombre": "Daniel Felipe Duque (Operador)"
+  }
+]
