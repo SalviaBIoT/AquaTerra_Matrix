@@ -24,7 +24,7 @@ from aquaterra.application.servicios import (
 )
 from aquaterra.application.sincronizacion_servicio import ActiveSyncAndGatewayService
 from aquaterra.config import Configuracion, configuracion_por_defecto
-from aquaterra.infrastructure.db import abrir_conexion, aplicar_migraciones
+from aquaterra.infrastructure.db import ConexionSQLiteSegura, abrir_conexion, aplicar_migraciones
 from aquaterra.infrastructure.db.repositorios import RepositorioUsuarios
 from aquaterra.infrastructure.legacy.migrador_v32 import migrar_semilla_v32
 
@@ -34,7 +34,7 @@ log = logging.getLogger(__name__)
 @dataclass
 class Contenedor:
     config: Configuracion
-    conexion: sqlite3.Connection
+    conexion: sqlite3.Connection | ConexionSQLiteSegura
     auth: ServicioAutenticacion = field(init=False)
     parcelas: ServicioParcelas = field(init=False)
     riego: ServicioRiego = field(init=False)

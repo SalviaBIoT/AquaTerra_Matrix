@@ -15,6 +15,7 @@ import json
 import logging
 import os
 import threading
+import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field, replace
@@ -35,7 +36,7 @@ from aquaterra.core.copiloto.cotas_calibracion import (
 
 log = logging.getLogger(__name__)
 
-MODELO_GEMINI_POR_DEFECTO = "gemini-4-hydrogen"
+MODELO_GEMINI_POR_DEFECTO = "gemini-3.5-flash-lite"
 MODELO_OLLAMA_POR_DEFECTO = "qwen2.5:3b"
 PREFIJOS_GEMINI_OBSOLETOS = ("gemini-2.5-", "gemini-2.0-", "gemini-1.5-")
 
@@ -142,7 +143,7 @@ def parsear_respuesta_json_ia(texto_json: str, *, proveedor_ia: str) -> Propuest
 
     return PropuestaCopiloto(
         diagnostico_tecnico=diagnostico,
-        justificacion_agronomica=justificacion or "Evaluación generada por modelo IA.",
+        justificacion_agronomica=justificacion,
         ajustes_propuestos=ajustes,
         confianza=confianza,
         alertas_consideradas=alertas,
@@ -175,8 +176,21 @@ class ClienteGeminiAIStudio:
         # 1. Intentar con el SDK oficial moderno `google-genai` (>= 3.2.0) si está instalado
         try:
             from google import genai  # type: ignore[import-not-found]
+            from google.genai import types as genai_types  # type: ignore[import-not-found]
 
-            client = genai.Client(api_key=self._api_key)
+            # Máximo 3 reintentos rápidos SOLO ante errores transitorios (408/5xx);
+            # se excluye HTTP 429 para no dormir horas en backoff ante cuota agotada.
+            http_opts = genai_types.HttpOptions(
+                timeout=int(max(2.0, self._timeout) * 1000),
+                retry_options=genai_types.HttpRetryOptions(
+                    attempts=3,
+                    initial_delay=0.5,
+                    max_delay=1.5,
+                    exp_base=2.0,
+                    http_status_codes=[408, 500, 502, 503, 504],
+                ),
+            )
+            client = genai.Client(api_key=self._api_key, http_options=http_opts)
             interaction = client.interactions.create(
                 model=self._modelo,
                 system_instruction=system_instruction,
@@ -186,6 +200,7 @@ class ClienteGeminiAIStudio:
                     "mime_type": "application/json",
                     "schema": ESQUEMA_JSON_RESPUESTA_COPILOTO,
                 },
+                timeout=self._timeout,
             )
             texto_salida = getattr(interaction, "output_text", None)
             if not texto_salida:
@@ -295,9 +310,10 @@ class ClienteOllamaLocal:
                 ],
                 "format": ESQUEMA_JSON_RESPUESTA_COPILOTO,
                 "options": {
-                    "temperature": 0.2,
+                    "temperature": 0.25,
                     "num_predict": 650,
                 },
+                "keep_alive": "10m",
                 "stream": False,
             }
         ).encode("utf-8")
@@ -319,8 +335,19 @@ class ClienteOllamaLocal:
         return parsear_respuesta_json_ia(texto_salida, proveedor_ia=self.proveedor_id)
 
 
+def _es_error_cuota_gemini(exc: BaseException) -> bool:
+    """Detecta HTTP 429 / cuota agotada en Gemini para activar enfriamiento sin reintentos inútiles."""
+    msg = f"{type(exc).__name__} {exc}".lower()
+    return any(
+        tok in msg
+        for tok in ("429", "ratelimit", "rate limit", "too_many_requests", "resource_exhausted")
+    )
+
+
 class OrquestadorIA:
     """Orquestador en cascada con guardarraíles físicos deterministas."""
+
+    COOLDOWN_CUOTA_GEMINI_SEG = 300.0
 
     def __init__(
         self,
@@ -331,6 +358,13 @@ class OrquestadorIA:
         self.config = config or ConfiguracionIA()
         self._override = proveedor_override
         self._asesor_reglas = AsesorDeterministaCopiloto()
+        self._cooldown_lock = threading.Lock()
+        self._gemini_cooldown_hasta = 0.0
+
+    def gemini_en_enfriamiento(self) -> bool:
+        """Indica si Gemini está temporalmente en pausa tras agotamiento de cuota."""
+        with self._cooldown_lock:
+            return time.monotonic() < self._gemini_cooldown_hasta
 
     def diagnosticar_con_auditoria(
         self, ctx: ContextoDiagnosticoCopiloto
@@ -361,17 +395,36 @@ class OrquestadorIA:
 
         modo = self.config.proveedor_preferido
 
-        # 1. Intento con Google Gemini AI Studio
+        # 1. Intento con Google Gemini AI Studio (respetando enfriamiento por cuota 429)
         if modo in ("auto", "gemini") and self.config.gemini_api_key:
-            cliente_gemini = ClienteGeminiAIStudio(
-                api_key=self.config.gemini_api_key,
-                modelo=self.config.gemini_modelo,
-                timeout_segundos=self.config.timeout_segundos,
-            )
-            try:
-                return cliente_gemini.diagnosticar(ctx)
-            except (urllib.error.URLError, TimeoutError, ValueError, RuntimeError, Exception) as exc:
-                log.warning("Gemini AI Studio no disponible (%s). Evaluando siguiente nivel.", exc)
+            en_pausa = modo == "auto" and self.gemini_en_enfriamiento()
+            if en_pausa:
+                log.info(
+                    "Gemini AI Studio en enfriamiento por cuota; delegando directo al siguiente nivel."
+                )
+            else:
+                cliente_gemini = ClienteGeminiAIStudio(
+                    api_key=self.config.gemini_api_key,
+                    modelo=self.config.gemini_modelo,
+                    timeout_segundos=self.config.timeout_segundos,
+                )
+                try:
+                    return cliente_gemini.diagnosticar(ctx)
+                except (urllib.error.URLError, TimeoutError, ValueError, RuntimeError, Exception) as exc:
+                    if _es_error_cuota_gemini(exc):
+                        with self._cooldown_lock:
+                            self._gemini_cooldown_hasta = (
+                                time.monotonic() + self.COOLDOWN_CUOTA_GEMINI_SEG
+                            )
+                        log.warning(
+                            "Gemini AI Studio alcanzó límite de cuota (429); "
+                            "activando enfriamiento %.0fs y pasando a respaldo local.",
+                            self.COOLDOWN_CUOTA_GEMINI_SEG,
+                        )
+                    else:
+                        log.warning(
+                            "Gemini AI Studio no disponible (%s). Evaluando siguiente nivel.", exc
+                        )
 
         # 2. Intento con Ollama Local
         if modo in ("auto", "ollama"):

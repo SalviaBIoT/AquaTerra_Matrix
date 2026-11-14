@@ -1,100 +1,108 @@
-# 🌱 AquaTerra Matrix — Sistema Central de Administración Ecológica, Agrícola y Bio-IoT
+# AquaTerra Matrix
 
-**Ecosistema:** TerraBit Agrotech & Conservación (Semilleros Kilby & MUCEM — Universidad Tecnológica de Pereira)  
-**Autor y Arquitecto de Software:** Daniel Felipe Duque Lizarralde  
-**Versión Actual:** `v5.0.0` (*App Shell* Híbrido *Local-First* · Backend + Frontend Consolidados)  
+Plataforma **Local-First** de monitoreo agroecológico, control de riego con enclavamientos físicos de seguridad y diagnóstico asistido por IA (**Mandarino IA Studio**) para redes de sensores ESP32 / Bio-IoT.
 
----
-
-## 1. Visión y Propósito del Sistema
-**AquaTerra Matrix** (evolución directa de *AquaUTP v3.2*) es el **Centro de Operaciones Local y Servidor Matriz en Python** diseñado para administrar unidades productivas agrícolas, estaciones de monitoreo microclimático y nodos de conservación ecológica de alta montaña.
-
-Integra bajo una sola arquitectura de software:
-- **🌱 TerraBit Nodo INTI:** Telemetría edafoclimática (Humedad capacitiva calibrada + filtro EMA, Temperatura radicular DS18B20, Presión/Temp/HR ambiental, Déficit de Presión de Vapor $VPD$, presupuesto energético LiFePO4/LiPo y gestión de riego).
-- **🐝 InBeersa (Abejas Angelitas — *Melipona eburnea*):** Monitoreo termohigrométrico interno/externo de colmenas, calidad de aire ($\text{CO}_2/\text{VOCs}$ vía MQ-135) e indexación de eventos bioacústicos I2S (archivos WAV 32-bit PCM @ 16 kHz).
-- **🍌 Sigatoka:** Vigilancia microclimática foliar y mojado de hoja para alerta temprana fitosanitaria (*Mycosphaerella fijiensis*).
-- **🏔️ Conservación & Páramos (Polylepis):** Series temporales hidro-ecológicas en turberas y bosques altoandinos con operación *Offline-First*.
+> **Ecosistema TerraBit & Conservación** · Universidad Tecnológica de Pereira (UTP) — Semilleros Kilby & MUCEM  
+> **Autor:** Daniel Felipe Duque Lizarralde
 
 ---
 
-## 2. Arquitectura y Estructura del Repositorio
+## Ecosistemas Soportados
+
+- **TerraBit Nodo INTI:** Humedad edáfica capacitiva (calibrada + EMA), temperatura radicular DS18B20, presión/temperatura/humedad ambiental, VPD psicrométrico (Tetens FAO-56) y gestión energética.
+- **InBeersa (*Melipona eburnea*):** Homeostasis térmica/higrométrica interna y externa de colmenas, calidad de aire (`CO2/VOCs`) y trazabilidad de eventos bioacústicos I2S.
+- **Sigatoka:** Vigilancia microclimática foliar y humedad de hoja para alerta temprana fitosanitaria.
+- **Conservación & Páramos (*Polylepis*):** Series temporales hidro-ecológicas de alta montaña preparadas para operación intermitente / offline.
+
+---
+
+## Características Principales (`v6.0.0`)
+
+- **App Nativa & Web Local-First:** Backend `FastAPI` + `SQLite WAL` empaquetado sobre `PyWebView` (o navegador con `--web`) sin depender de la nube para operar en campo.
+- **Motor Analítico y Control Seguro:**
+  - Pulso operativo 24 h por estación, tasa de secado OLS, correlación bivariada de Pearson y balance hídrico por parcela.
+  - **Safety Interlock Engine (5 candados físicos):** Lluvia inminente (Open-Meteo), suelo en capacidad de campo, anomalía de sensor/salud de bomba, saturación y ventana de caudal.
+- **Mandarino IA Studio:** Copiloto agronómico modular con hilos aislados por estación, enlace climático en tiempo real vía **Open-Meteo**, memoria conversacional, cotas metrológicas anti-alucinación y cascada híbrida (`Google Gemini` $\to$ `Ollama GPU/CPU local` $\to$ `Motor determinista`).
+- **Conectores e Ingesta:** Sincronización incremental `Ubidots REST`, gateway serial `nRF24L01+ PA+LNA`, importador CSV/MicroSD, exportador ejecutivo `.xlsx` (3 hojas) y alertas vía `n8n` / `Telegram`.
+
+---
+
+## Arquitectura del Proyecto
 
 ```text
 AquaTerra_Matrix/
-├── aquaterra/                        # Paquete principal en 4 capas (Clean Architecture)
-│   ├── core/                         # Dominio puro y ciencia agronómica (Cero I/O)
-│   │   ├── domain/                   # Entidades inmutables, validadores y errores
-│   │   ├── agronomia/                # Psicrometría (VPD Tetens FAO-56) y balance hídrico
-│   │   ├── analitica/                # Ventanas móviles, secado OLS, Pearson r, viento circular y Pulso 24h
-│   │   ├── control/                  # SafetyInterlockEngine (5 candados), salud de bomba y planificador
-│   │   └── tiempo.py                 # Estandarización ISO-8601 (UTC-05:00) + Unix Epoch
-│   ├── application/                  # Casos de uso, permisos, transacciones y contenedor DI
-│   ├── infrastructure/               # Adaptadores técnicos
-│   │   ├── db/                       # Motor SQLite3 (modo WAL), migraciones y repositorios
-│   │   ├── seguridad/                # Hashing PBKDF2-HMAC-SHA256 (600,000 iteraciones + salt)
-│   │   ├── legacy/                   # Migrador atómico desde AquaUTP v3.2
-│   │   ├── exportacion/              # Escritor OpenXML .xlsx (3 hojas) y exportador .csv
-│   │   ├── ia/                       # Orquestador híbrido (Gemini AI Studio / Ollama GPU / Reglas)
-│   │   ├── clima/                    # Cliente meteorológico Open-Meteo (UTP Pereira)
-│   │   ├── notificaciones/           # Despachador Webhook n8n (WhatsApp) + Telegram Bot
-│   │   └── iot_ingest/               # Parsers locales, Ubidots REST y Gateway USB-Serial nRF24L01+
-│   └── ui/                           # App Shell v5.0, tema dual, 7 vistas y Matplotlib OO sin fugas
-├── DEVELOP/                          # Centro de Trazabilidad (Reportes, ADRs y Propuestas)
-│   ├── README.md                     # Índice maestro y matriz de deuda técnica
-│   ├── ARQUITECTURA_MAESTRA_BRUJULA.md    # Brújula Maestra de Backend y Dominio
-│   ├── ARQUITECTURA_FRONTEND_V5_MAESTRA.md # Arquitectura consolidada Frontend v5.0
-│   ├── reportes/                     # REP-000 a REP-008
-│   ├── decisiones/                   # ADR-001 a ADR-004
-│   ├── propuestas/                   # PRP-001 (Antena/Ubidots), PRP-002 (Modelo Hídrico CC/PMP)
-│   └── plantillas/                   # Plantillas estandarizadas de ingeniería
-├── scripts/                          # Utilidades CLI (migrar_legacy_v32.py)
-├── tests/                            # Suite de 86 pruebas automatizadas (pytest)
-├── legacy/aquautp_v3.2/              # Respaldo histórico inmutable de la semilla v3.2
-├── docs/                             # Documentación de telemetría y manuales originales
-├── main.py                           # Punto de entrada (también ejecutable con python -m aquaterra)
-├── pyproject.toml                    # Configuración de empaquetado, pytest y ruff
-├── requirements.txt                  # Dependencias de producción
-└── requirements-dev.txt              # Dependencias de pruebas y análisis estático
+├── aquaterra/
+│   ├── core/             # Dominio, psicrometría VPD, analítica OLS/Pearson, candados y contratos IA
+│   ├── application/      # Casos de uso, pulso 24h, control de riego, sync híbrida y Copiloto
+│   ├── infrastructure/   # SQLite WAL, PBKDF2-SHA256, Open-Meteo, Ubidots, Ollama/Gemini, .xlsx
+│   ├── api/              # API REST FastAPI, cookies HttpOnly y RBAC (admin / operador / lector)
+│   └── desktop.py        # Servidor embebido + ventana nativa PyWebView / modo web
+├── frontend/             # SPA React 19 + TypeScript + Tailwind CSS v4 + ECharts + React-Markdown
+├── DEVELOP/              # ADRs, reportes de ingeniería, sprints y guías técnicas
+├── scripts/              # Utilidades CLI, generador de íconos y accesos directos de escritorio
+├── tests/                # Suite automatizada pytest (core, API v6, SQLite WAL, IA y desktop)
+├── legacy/aquautp_v3.2/  # Semilla histórica preservada de AquaUTP v3.2
+├── .env.example          # Plantilla de variables de entorno (sin credenciales)
+└── main.py               # Punto de entrada unificado
 ```
 
 ---
 
-## 3. Instalación, Ejecución y Pruebas
+## Inicio Rápido
 
-```powershell
-# 1. Posicionarse en el directorio raíz del repositorio
-cd C:\Users\danie\Developer\AquaTerra_Matrix
+### 1. Entorno Python y Backend
 
-# 2. Activar el entorno virtual (.venv con Python 3.13)
+```bash
+git clone https://github.com/dfelipeduquel/AquaTerra_Matrix.git
+cd AquaTerra_Matrix
+
+python -m venv .venv
+# Windows PowerShell:
 .\.venv\Scripts\Activate.ps1
+# Linux / macOS:
+# source .venv/bin/activate
 
-# 3. Ejecutar la aplicación (importa automáticamente la semilla v3.2 a SQLite en el primer arranque)
-python main.py
-# o como módulo:
-python -m aquaterra
-
-# 4. Ejecutar la suite completa de pruebas y el linter
-pytest -v
-ruff check .
+pip install -r requirements.txt
+pip install -r requirements-dev.txt
 ```
 
+### 2. Compilar el Frontend Web (`React + Vite`)
+
+```bash
+cd frontend
+npm install
+npm run build
+cd ..
+```
+
+### 3. Configurar Variables Opcionales y Ejecutar
+
+```bash
+cp .env.example .env
+# Edita .env si deseas añadir GEMINI_API_KEY, UBIDOTS_TOKEN o modelo Ollama
+```
+
+```bash
+# Modo aplicación de escritorio (PyWebView):
+python main.py
+
+# Modo servidor web en navegador (puerto 8765):
+python main.py --web
+```
+
+> En el primer arranque sin usuarios configurados, AquaTerra siembra la base SQLite local en `data/runtime/aquaterra.db`. Accede con tu usuario operativo y gestiona credenciales/roles desde **Configuración**.
+
 ---
 
-## 4. Roadmap de Ingeniería por Versiones
+## Calidad y Pruebas
 
-| Versión | Nombre Clave | Alcance Técnico Principal | Estado |
-|---|---|---|---|
-| **v3.2.0** | `Legacy Seed` | Congelación de respaldo histórico (`legacy/aquautp_v3.2` y tag `v3.2.0-legacy`), entorno `.venv` y autoría unificada. | ✅ **Completado ([REP-000](DEVELOP/reportes/REP-000_migracion_semilla_y_entorno.md))** |
-| **v4.0.0a1** | `Core SQLite & Clean Arch` | Re-arquitectura en 4 capas (`aquaterra/`), cierre total de deuda técnica (`DT-01` a `DT-05`), SQLite3 WAL, PBKDF2-SHA256, $VPD$ Tetens, adaptadores IoT base, carpeta `DEVELOP/` y 47 tests en verde. | ✅ **Completado ([REP-001](DEVELOP/reportes/REP-001_arquitectura_v4_y_resolucion_deuda_tecnica.md))** |
-| **v4.1.0a1** | `Fase B1 · Esquema v2 e Ingesta Universal` | Migración SQLite `v2` (7 tablas de eventos, calibración con *rollback*, actuadores, riegos programados, clima y copiloto), parsers de Sigatoka (`MUNDONUEVO.csv`/`buffer_sigatoka.json`), Conservación/Páramos, guardia RTC y 57 tests en verde. | ✅ **Completado ([REP-002](DEVELOP/reportes/REP-002_fase_b1_esquema_v2_e_ingesta_universal.md))** |
-| **v4.1.0a2** | `Fase B2 · Motor Analítico y Pulso 24h` | Paquete `aquaterra/core/analitica/` (ventana móvil, tasa de secado OLS, correlación de Pearson $r$, rumbo vectorial circular y Pulso 24h de las 4 familias), Window Functions SQLite3, `NodePulseService` y 64 tests en verde. | ✅ **Completado ([REP-003](DEVELOP/reportes/REP-003_fase_b2_motor_analitico_ventana_movil_y_pulso_24h.md))** |
-| **v4.1.0a3** | `Fase B3 · Enclavamientos, Salud de Bomba y Planificador` | Paquete modular `aquaterra/core/control/` (`SafetyInterlockEngine` de 5 candados, diagnóstico de bomba con modo `SIN_SENSOR_ACTUADOR` hoy y vibración/caudal a futuro, incidencia $\Delta\theta_A/\Delta\theta_B$ y recomendador proactivo), `DecisionAndControlService` y 68 tests en verde. | ✅ **Completado ([REP-004](DEVELOP/reportes/REP-004_fase_b3_enclavamientos_salud_bomba_e_incidencia_riego.md))** |
-| **v4.1.0a4** | `Fase B4 · Exportador .xlsx Multi-Hoja y Radar de Nodos` | Paquete `aquaterra/infrastructure/exportacion/` (libros `.xlsx` de 3 hojas sin dependencias externas y `.csv`), `StationDiscoveryService` (priorización por criticidad y detector MicroSD), `AnalyticsAndExportService` y 71 tests en verde. | ✅ **Completado ([REP-005](DEVELOP/reportes/REP-005_fase_b4_exportador_xlsx_y_radar_estaciones.md))** |
-| **v4.1.0** | `Fase B5 · Orquestador IA Híbrido y Copiloto de Calibración` | Orquestador IA en cascada (`Gemini API` / `Ollama qwen2.5:3b` / `Reglas`) y `CalibrationCopilotService` con *rollback* en 1 clic. | ✅ **Completado ([REP-006](DEVELOP/reportes/REP-006_fase_b5_orquestador_ia_y_copiloto_calibracion.md))** |
-| **v4.2.0** | `Conectores Activos & Gateway nRF24L01+` | Cliente incremental Ubidots REST, Open-Meteo UTP Pereira, Gateway serial `nRF24L01+ PA+LNA`, `n8n`/Telegram y búsqueda inteligente. | ✅ **Completado ([REP-007](DEVELOP/reportes/REP-007_sprint_v42_conectores_activos_ubidots_clima_nrf24_y_notificaciones.md))** |
-| **v5.0.0** | `App Shell Híbrido Local-First & 7 Vistas` | Consola integral con Top Command Bar (`Ctrl+K`), tema dual (*Obsidian Bio-Tech* / *Field Daylight*), telemetría adaptativa, 5 candados, Copiloto, radio/MicroSD y configuración en caliente. | ✅ **Completado ([REP-008](DEVELOP/reportes/REP-008_frontend_v50_app_shell_hibrido_y_consolidacion.md))** |
+```bash
+ruff check .
+pytest -m "not gui" -ra
 
----
+cd frontend
+npx tsc --noEmit
+npm run lint
+```
 
-**Licencia y Propiedad Intelectual:**  
-Desarrollado íntegramente por **Daniel Felipe Duque Lizarralde** — Ingeniería UTP / Ecosistema TerraBit.
+La trazabilidad completa por fases y sprints (`REP-000`–`REP-008`, `ADR-001`–`ADR-004` y `SPRINT_01`–`SPRINT_13`) vive en [DEVELOP/README.md](DEVELOP/README.md).

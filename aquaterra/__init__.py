@@ -13,8 +13,10 @@ Arquitectura por capas (dependencias apuntan siempre hacia adentro):
 - ``core``           : dominio puro (entidades, validadores, ciencia agronómica). Sin I/O.
 - ``application``    : casos de uso / servicios (orquestan core + infraestructura).
 - ``infrastructure`` : SQLite, seguridad, migración legacy, ingesta IoT.
-- ``ui``             : vistas ttkbootstrap; solo hablan con ``application``.
+- ``api``            : servidor FastAPI local 1:1 sobre ``application`` + frontend web.
+- ``desktop``        : lanzador nativo PyWebView (Edge WebView2) y modo ``--web``.
+- ``ui``             : respaldo legacy ttkbootstrap (``--legacy-ui``).
 """
 
-__version__ = "5.0.0"
+__version__ = "6.0.0"
 __autor__ = "Daniel Felipe Duque Lizarralde"

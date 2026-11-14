@@ -298,3 +298,227 @@ def test_reparacion_timestamps_rtc_y_sincronizacion_humedad_parcela(tmp_path: Pa
         assert parcela_refrescada.humedad_pct == pytest.approx(61.5)
     finally:
         cont.cerrar()
+
+
+def test_mandarino_saludo_conversacional_y_modo_tecnico() -> None:
+    """Verifica que Mandarino responda con calidez a saludos sin disparar auditorías frías."""
+    from aquaterra.core.copiloto.asesor_reglas import AsesorDeterministaCopiloto
+
+    asesor = AsesorDeterministaCopiloto()
+    ctx_saludo = ContextoDiagnosticoCopiloto(
+        mensaje_usuario="Hola",
+        parametros_actuales={},
+    )
+    prop_saludo = asesor.diagnosticar(ctx_saludo)
+    assert "Mandarino" in prop_saludo.diagnostico_tecnico
+    assert prop_saludo.justificacion_agronomica == ""
+    assert prop_saludo.ajustes_propuestos == {}
+
+    ctx_mixto = ContextoDiagnosticoCopiloto(
+        mensaje_usuario="Hola, revisa el umbral porque el riego quedó insuficiente",
+        parametros_actuales={"umbral_humedad_pct": 45.0, "lamina_max_l_m2": 8.0},
+    )
+    prop_tecnica = asesor.diagnosticar(ctx_mixto)
+    assert "umbral_humedad_pct" in prop_tecnica.ajustes_propuestos
+    assert prop_tecnica.justificacion_agronomica != ""
+
+
+def test_segmentacion_estricta_general_vs_estacion_y_contexto_global(
+    tmp_path: Path,
+) -> None:
+    """Verifica aislamiento de historial por estación sin perder conciencia global."""
+    cfg = Configuracion(ruta_db=tmp_path / "segmentacion_test.db")
+    cont = construir_contenedor(cfg, sembrar_legacy=False)
+    try:
+        with cont.conexion:
+            est1 = RepositorioEstaciones(cont.conexion).crear(
+                "NODE-A", "Estación Alpha", TipoEstacion.TERRABIT_INTI
+            )
+        cont.copiloto.orquestador.config = ConfiguracionIA(proveedor_preferido="local_reglas")
+
+        # 1. Charla general (estacion_id=None) -> recibe panorama global del nodo
+        res_gen = cont.copiloto.consultar_copiloto("Hola Mandarino", estacion_id=None)
+        diag_lower = res_gen.propuesta.diagnostico_tecnico.lower()
+        assert "estación alpha" in diag_lower or "estación" in diag_lower
+
+        # 2. Charla en Estación Alpha (estacion_id=est1.id)
+        cont.copiloto.consultar_copiloto("Analiza el pulso de Alpha", estacion_id=est1.id)
+
+        hist_general = cont.copiloto.listar_historial_conversaciones(solo_sin_estacion=True)
+        hist_alpha = cont.copiloto.listar_historial_conversaciones(estacion_id=est1.id)
+
+        assert len(hist_general) == 1
+        assert hist_general[0].mensaje_usuario == "Hola Mandarino"
+        assert len(hist_alpha) == 1
+        assert hist_alpha[0].mensaje_usuario == "Analiza el pulso de Alpha"
+    finally:
+        cont.cerrar()
+
+
+def test_memoria_multiturno_segmentada_y_circuit_breaker_cuota(tmp_path: Path) -> None:
+    """Verifica memoria de turnos aislada por hilo y cooldown ante error 429 de Gemini."""
+    from aquaterra.infrastructure.ia.proveedores import (
+        OrquestadorIA,
+        _es_error_cuota_gemini,
+    )
+
+    turnos_capturados: list[tuple[dict[str, str], ...]] = []
+
+    class CapturingMock:
+        proveedor_id = "mock_memoria"
+
+        def diagnosticar(self, ctx: ContextoDiagnosticoCopiloto) -> PropuestaCopiloto:
+            turnos_capturados.append(ctx.ultimos_turnos)
+            return PropuestaCopiloto(
+                diagnostico_tecnico=f"Respuesta a: {ctx.mensaje_usuario}",
+                justificacion_agronomica="",
+                ajustes_propuestos={},
+                confianza=0.95,
+                alertas_consideradas=(),
+                proveedor_ia=self.proveedor_id,
+            )
+
+    cfg = Configuracion(ruta_db=tmp_path / "memoria_test.db")
+    cont = construir_contenedor(cfg, sembrar_legacy=False)
+    try:
+        with cont.conexion:
+            est = RepositorioEstaciones(cont.conexion).crear(
+                "NODE-M", "Nodo Memoria", TipoEstacion.TERRABIT_INTI
+            )
+        cont.copiloto.orquestador = OrquestadorIA(proveedor_override=CapturingMock())
+
+        # Turno 1 general -> historial vacío
+        cont.copiloto.consultar_copiloto("Mensaje Gen 1", estacion_id=None)
+        assert turnos_capturados[-1] == ()
+
+        # Turno 1 estación -> sigue aislado (no recibe "Mensaje Gen 1")
+        cont.copiloto.consultar_copiloto("Mensaje Est 1", estacion_id=est.id)
+        assert turnos_capturados[-1] == ()
+
+        # Turno 2 general -> recibe SOLO "Mensaje Gen 1"
+        cont.copiloto.consultar_copiloto("¿Qué sugerencias me das?", estacion_id=None)
+        assert len(turnos_capturados[-1]) == 1
+        assert turnos_capturados[-1][0]["usuario"] == "Mensaje Gen 1"
+
+        assert _es_error_cuota_gemini(RuntimeError("Error code: 429 - too_many_requests")) is True
+        assert _es_error_cuota_gemini(RuntimeError("Timeout de lectura")) is False
+    finally:
+        cont.cerrar()
+
+
+def test_prompt_modo_ligero_vs_tecnico() -> None:
+    """Verifica que los saludos omitan parámetros numéricos de calibración (two-tier)."""
+    from aquaterra.core.copiloto.contratos_ia import (
+        construir_prompt_contexto_copiloto,
+        es_consulta_ligera,
+    )
+
+    assert es_consulta_ligera("Hola Mandarino") is True
+    assert es_consulta_ligera("Audita los umbrales de calibración ante lluvia") is False
+
+    prompt_ligero = construir_prompt_contexto_copiloto(
+        ContextoDiagnosticoCopiloto(
+            mensaje_usuario="Hola Mandarino",
+            parametros_actuales={"umbral_humedad_pct": 45.0},
+        )
+    )
+    assert '"modo": "charla_ligera"' in prompt_ligero
+    assert "umbral_humedad_pct" not in prompt_ligero
+
+    prompt_tecnico = construir_prompt_contexto_copiloto(
+        ContextoDiagnosticoCopiloto(
+            mensaje_usuario="Audita umbral de riego",
+            parametros_actuales={"umbral_humedad_pct": 45.0},
+        )
+    )
+    assert '"modo": "analisis_tecnico"' in prompt_tecnico
+    assert "umbral_humedad_pct" in prompt_tecnico
+
+
+def test_mandarino_inyecta_clima_open_meteo_y_evita_texto_generico(tmp_path: Path) -> None:
+    """Verifica enlace climático Open-Meteo al Copiloto y supresión de relleno genérico."""
+    from aquaterra.core import tiempo
+    from aquaterra.core.copiloto.contratos_ia import (
+        construir_prompt_contexto_copiloto,
+        es_consulta_ligera,
+    )
+    from aquaterra.core.domain.entidades import PuntoPronosticoClima
+    from aquaterra.infrastructure.db.repositorios import RepositorioPronosticoClima
+    from aquaterra.infrastructure.ia.proveedores import OrquestadorIA
+
+    assert es_consulta_ligera("¿Qué tal está el clima hoy?") is False
+
+    sin_just = parsear_respuesta_json_ia(
+        json.dumps(
+            {
+                "diagnostico_tecnico": "¡Hola! Hoy hay 21.5 °C en UTP Pereira.",
+                "justificacion_agronomica": "",
+                "ajustes_propuestos": {},
+                "confianza": 0.98,
+                "alertas_consideradas": [],
+            }
+        ),
+        proveedor_ia="gemini:gemini-3.5-flash-lite",
+    )
+    assert sin_just.justificacion_agronomica == ""
+
+    capturados: list[ContextoDiagnosticoCopiloto] = []
+
+    class WeatherMock:
+        proveedor_id = "mock-weather"
+
+        def diagnosticar(self, ctx: ContextoDiagnosticoCopiloto) -> PropuestaCopiloto:
+            capturados.append(ctx)
+            return PropuestaCopiloto(
+                diagnostico_tecnico="Clima enlazado.",
+                justificacion_agronomica="",
+                ajustes_propuestos={},
+                confianza=0.95,
+                alertas_consideradas=(),
+                proveedor_ia=self.proveedor_id,
+            )
+
+    cfg = Configuracion(ruta_db=tmp_path / "clima_copiloto.db")
+    cont = construir_contenedor(cfg, sembrar_legacy=False)
+    try:
+        ahora_ep = tiempo.a_epoch(tiempo.ahora())
+        with cont.conexion:
+            est = RepositorioEstaciones(cont.conexion).crear(
+                "inti-clima",
+                "TerraBit-NodoINTI",
+                TipoEstacion.TERRABIT_INTI,
+                latitud=4.7905,
+                longitud=-75.6904,
+            )
+            RepositorioPronosticoClima(cont.conexion).guardar_lote(
+                [
+                    PuntoPronosticoClima(
+                        estacion_id=est.id,
+                        ts_objetivo_epoch=ahora_ep + 600,
+                        ts_objetivo_iso=tiempo.a_iso(tiempo.desde_epoch(ahora_ep + 600)),
+                        temp_c=21.4,
+                        hum_relativa_pct=78.0,
+                        lluvia_prob_pct=45.0,
+                        lluvia_mm=1.2,
+                        viento_ms=1.8,
+                        et0_mm=0.22,
+                    )
+                ]
+            )
+        cont.copiloto.orquestador = OrquestadorIA(proveedor_override=WeatherMock())
+        cont.copiloto.consultar_copiloto(
+            "¿Tienes los datos exactos del clima hoy?",
+            estacion_id=est.id,
+            ahora_epoch=ahora_ep,
+        )
+        assert len(capturados) == 1
+        assert capturados[0].clima_pronostico is not None
+        assert capturados[0].clima_pronostico["ahora"]["temp_c"] == pytest.approx(21.4)
+        prompt = construir_prompt_contexto_copiloto(capturados[0])
+        assert '"clima_actual_y_pronostico"' in prompt
+        assert "21.4" in prompt
+    finally:
+        cont.cerrar()
+
+
+

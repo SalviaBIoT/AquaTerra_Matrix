@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem("aquaterra_color_scheme");
+          var meta = document.querySelector('meta[name="color-scheme"]');
+          if (saved === "light" || saved === "dark") {
+            if (meta) meta.setAttribute("content", saved);
+            document.documentElement.setAttribute("data-theme", saved);
+          } else {
+            if (meta) meta.setAttribute("content", "light dark");
+            var prefersDark =
+              window.matchMedia &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches;
+            document.documentElement.setAttribute(
+              "data-theme",
+              prefersDark ? "dark" : "light"
+            );
+          }
+        } catch (_e) {
+          document.documentElement.setAttribute("data-theme", "dark");
+        }
+      })();
+    </script>
+    <meta name="theme-color" content="#0A0E0C" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>AquaTerra Matrix · Telemetría &amp; Control Hidráulico</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
