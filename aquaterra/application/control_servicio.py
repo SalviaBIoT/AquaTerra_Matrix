@@ -25,6 +25,7 @@ from aquaterra.core.domain import (
     DiagnosticoMecanicoBomba,
     ErrorPermiso,
     EstadoRiegoProgramado,
+    EventoRiego,
     IncidenciaRiego,
     ModoVerificacionRiego,
     Parcela,
@@ -39,6 +40,7 @@ from aquaterra.infrastructure.db.repositorios import (
     RepositorioLecturas,
     RepositorioParcelas,
     RepositorioPronosticoClima,
+    RepositorioRiegos,
     RepositorioRiegosProgramados,
     RepositorioSaludActuadores,
 )
@@ -56,6 +58,7 @@ class DecisionAndControlService:
         self._salud_act = RepositorioSaludActuadores(conexion)
         self._incidencia = RepositorioIncidenciaRiego(conexion)
         self._programados = RepositorioRiegosProgramados(conexion)
+        self._riegos_hist = RepositorioRiegos(conexion)
         self._auditoria = RepositorioAuditoria(conexion)
 
     def _parametros_calibracion(self, parcela: Parcela) -> dict[str, Any]:
@@ -294,3 +297,15 @@ class DecisionAndControlService:
                 observaciones=eval_suelo.observaciones,
             )
         return salud, incidencia
+
+    def listar_riegos_parcela(self, parcela_id: int) -> list[EventoRiego]:
+        return self._riegos_hist.listar_por_parcela(parcela_id)
+
+    def listar_riegos_programados(self, parcela_id: int | None = None) -> list[RiegoProgramado]:
+        return self._programados.listar_pendientes(parcela_id=parcela_id)
+
+    def listar_incidencias_parcela(self, parcela_id: int) -> list[IncidenciaRiego]:
+        return self._incidencia.listar_por_parcela(parcela_id)
+
+    def ultimo_salud_actuador(self, parcela_id: int) -> RegistroSaludActuador | None:
+        return self._salud_act.ultimo_por_parcela(parcela_id)

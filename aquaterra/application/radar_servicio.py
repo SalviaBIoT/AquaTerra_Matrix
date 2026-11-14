@@ -17,7 +17,7 @@ from pathlib import Path
 
 from aquaterra.application.pulso_servicio import NodePulseService
 from aquaterra.core.analitica import NivelSeveridadPulso
-from aquaterra.core.domain import Estacion, TipoEstacion
+from aquaterra.core.domain import Estacion, EventoEstacion, TipoEstacion
 from aquaterra.infrastructure.db.repositorios import (
     RepositorioEstaciones,
     RepositorioEventosEstacion,
@@ -248,3 +248,15 @@ class StationDiscoveryService:
             for p in parcelas_vinculadas:
                 self._parcelas.actualizar_humedad(p.id, ultima_humedad)
         return len(parcelas_vinculadas)
+
+    def listar_estaciones(self) -> list[Estacion]:
+        """Devuelve todas las estaciones registradas ordenadas por ID."""
+        return self._estaciones.listar()
+
+    def obtener_estacion(self, estacion_id: int) -> Estacion:
+        return self._estaciones.obtener(estacion_id)
+
+    def listar_eventos_estacion(self, estacion_id: int, *, limite: int = 50) -> list[EventoEstacion]:
+        """Lista los eventos recientes de una estación ordenados del más nuevo al más antiguo."""
+        eventos = self._eventos.listar(estacion_id)
+        return list(reversed(eventos[-limite:])) if limite > 0 else list(reversed(eventos))

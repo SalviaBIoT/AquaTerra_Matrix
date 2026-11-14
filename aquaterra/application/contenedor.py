@@ -57,7 +57,7 @@ class Contenedor:
         self.exportacion = AnalyticsAndExportService(self.conexion)
         self.copiloto = CalibrationCopilotService(self.conexion)
         self.sincronizacion = ActiveSyncAndGatewayService(
-            self.conexion, ruta_db=self.config.ruta_db
+            self.conexion, ruta_db=self.config.ruta_db, copiloto=self.copiloto
         )
 
     def cerrar(self) -> None:

@@ -123,3 +123,18 @@ class NodePulseService:
             variable_y=variable_y,
             tolerancia_seg=tolerancia_seg,
         )
+
+    def obtener_series_ventana(
+        self,
+        estacion_id: int,
+        *,
+        horas: int = 24,
+    ) -> tuple[object, int, int, dict[str, list[tuple[int, float]]], dict[str, str | None]]:
+        """Devuelve ``(estacion, desde_epoch, hasta_epoch, series, unidades)`` para la UI Multi-Nodo."""
+        estacion = self._estaciones.obtener(estacion_id)
+        techo = self._lecturas.ultimo_epoch(estacion_id) or tiempo.a_epoch(tiempo.ahora())
+        piso = 0 if horas <= 0 else max(0, techo - (horas * 3600))
+        series, unidades = self._lecturas.series_estacion_rango(
+            estacion_id, desde_epoch=piso, hasta_epoch=techo
+        )
+        return estacion, piso, techo, series, unidades

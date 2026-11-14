@@ -52,7 +52,15 @@ def test_flujo_completo_una_sola_raiz(app):
     assert isinstance(app._vista, VistaLogin)
     _iniciar(app)
     assert isinstance(app._vista, VistaDashboard)
-    for mostrar in (app.mostrar_parcelas, app.mostrar_riego, app.mostrar_monitor, app.mostrar_dashboard):
+    for mostrar in (
+        app.mostrar_parcelas,
+        app.mostrar_riego,
+        app.mostrar_monitor,
+        app.mostrar_copiloto,
+        app.mostrar_hardware,
+        app.mostrar_configuracion,
+        app.mostrar_dashboard,
+    ):
         mostrar()
         app.raiz.update()
     # Regresión DT-05a: cerrar sesión vuelve al login en la MISMA raíz (antes mataba el proceso).

@@ -1,4 +1,4 @@
-"""Pantalla de acceso con fondo paisajístico."""
+"""Pantalla de acceso v5.0 con identidad Bio-IoT TerraBit, tema dual y salida segura."""
 
 from __future__ import annotations
 
@@ -16,14 +16,16 @@ if TYPE_CHECKING:
     from aquaterra.ui.app import AplicacionMatrix
 
 log = logging.getLogger(__name__)
-ANCHO, ALTO = 800, 600
+ANCHO, ALTO = 900, 640
 
 
 class VistaLogin(ttk.Frame):
+    """Vista inicial de autenticación sobre clave PBKDF2-SHA256."""
+
     def __init__(self, maestro, app: AplicacionMatrix):
         super().__init__(maestro)
         self.app = app
-        self._imagen_fondo: ImageTk.PhotoImage | None = None  # referencia viva para Tk
+        self._imagen_fondo: ImageTk.PhotoImage | None = None
         self._construir()
 
     def _construir(self) -> None:
@@ -36,38 +38,93 @@ class VistaLogin(ttk.Frame):
         except OSError as exc:
             log.warning("No se pudo cargar el fondo %s: %s", ruta, exc)
 
-        lienzo = Canvas(self, width=ANCHO, height=ALTO, highlightthickness=0, bg="#2b3e50")
+        lienzo = Canvas(self, width=ANCHO, height=ALTO, highlightthickness=0, bg="#0b0f14")
         lienzo.pack(fill=BOTH, expand=True)
         if self._imagen_fondo:
             lienzo.create_image(0, 0, image=self._imagen_fondo, anchor="nw")
 
-        lienzo.create_text(400, 50, text="AquaTerra Matrix", font=("Helvetica", 28, "bold"), fill="white")
-        lienzo.create_text(400, 88, text="Administración Ecológica, Agrícola y Bio-IoT · Ecosistema TerraBit",
-                           font=("Helvetica", 12), fill="white")
-        lienzo.create_rectangle(250, 180, 550, 480, fill="#1a1a1a", stipple="gray50", outline="")
+        lienzo.create_text(
+            450, 56, text="AQUATERRA MATRIX", font=("Segoe UI", 30, "bold"), fill="#f1f5f9"
+        )
+        lienzo.create_text(
+            450,
+            96,
+            text="Centro de Mando Agronómico, Ecológico y Bio-IoT · Ecosistema TerraBit",
+            font=("Segoe UI", 11),
+            fill="#cbd5e1",
+        )
 
-        lienzo.create_text(400, 210, text="Usuario:", font=("Helvetica", 12), fill="white")
-        self.entrada_usuario = ttk.Entry(lienzo, font=("Helvetica", 12), width=25)
-        lienzo.create_window(400, 240, window=self.entrada_usuario)
+        # Tarjeta translúcida central
+        lienzo.create_rectangle(
+            275, 155, 625, 515, fill="#0b0f14", stipple="gray75", outline="#10b981", width=2
+        )
 
-        lienzo.create_text(400, 290, text="Contraseña:", font=("Helvetica", 12), fill="white")
-        self.entrada_clave = ttk.Entry(lienzo, font=("Helvetica", 12), show="•", width=25)
-        lienzo.create_window(400, 320, window=self.entrada_clave)
+        lienzo.create_text(
+            450, 192, text="Acceso Operativo Híbrido", font=("Segoe UI", 14, "bold"), fill="#10b981"
+        )
+        lienzo.create_text(
+            450, 215, text="SQLite3 WAL Local-First · PBKDF2-SHA256", font=("Segoe UI", 9), fill="#94a3b8"
+        )
 
-        boton = ttk.Button(lienzo, text="INICIAR SESIÓN", bootstyle="success", width=20, command=self._ingresar)
-        lienzo.create_window(400, 400, window=boton)
+        lienzo.create_text(450, 250, text="Usuario", font=("Segoe UI", 10, "bold"), fill="#f1f5f9")
+        self.entrada_usuario = ttk.Entry(lienzo, font=("Segoe UI", 11), width=28)
+        lienzo.create_window(450, 278, window=self.entrada_usuario)
 
-        lienzo.create_text(400, 560, text=f"v{__version__} · Core SQLite", font=("Arial", 10), fill="white")
-        lienzo.create_text(400, 580, text=f"Arquitectura y desarrollo: {__autor__}", font=("Arial", 10), fill="white")
+        lienzo.create_text(450, 322, text="Contraseña", font=("Segoe UI", 10, "bold"), fill="#f1f5f9")
+        self.entrada_clave = ttk.Entry(lienzo, font=("Segoe UI", 11), show="•", width=28)
+        lienzo.create_window(450, 350, window=self.entrada_clave)
 
-        # Usabilidad: Enter para enviar y foco inicial en el usuario.
+        btn_login = ttk.Button(
+            lienzo,
+            text="🔓 INICIAR SESIÓN",
+            bootstyle="success",
+            width=26,
+            command=self._ingresar,
+        )
+        lienzo.create_window(450, 408, window=btn_login)
+
+        btn_tema = ttk.Button(
+            lienzo,
+            text="☀️/🌙 Tema",
+            bootstyle="secondary-outline",
+            width=12,
+            command=self.app.alternar_tema,
+        )
+        lienzo.create_window(382, 464, window=btn_tema)
+
+        btn_salir = ttk.Button(
+            lienzo,
+            text="⏻ Salir",
+            bootstyle="danger-outline",
+            width=12,
+            command=self.app.salir,
+        )
+        lienzo.create_window(518, 464, window=btn_salir)
+
+        lienzo.create_text(
+            450,
+            584,
+            text=f"v{__version__} · Core SQLite3 WAL + IA Híbrida + Gateway nRF24L01+",
+            font=("Segoe UI", 9),
+            fill="#cbd5e1",
+        )
+        lienzo.create_text(
+            450,
+            606,
+            text=f"Arquitectura y desarrollo: {__autor__}",
+            font=("Segoe UI", 9),
+            fill="#94a3b8",
+        )
+
         self.entrada_usuario.bind("<Return>", lambda _e: self.entrada_clave.focus_set())
         self.entrada_clave.bind("<Return>", lambda _e: self._ingresar())
         self.after_idle(self.entrada_usuario.focus_set)
 
     def _ingresar(self) -> None:
         usuario = self.app.ejecutar_accion(
-            lambda: self.app.contenedor.auth.iniciar_sesion(self.entrada_usuario.get(), self.entrada_clave.get()),
+            lambda: self.app.contenedor.auth.iniciar_sesion(
+                self.entrada_usuario.get(), self.entrada_clave.get()
+            ),
             titulo_error="Error de acceso",
         )
         if usuario is None:
