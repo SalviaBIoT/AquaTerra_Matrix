@@ -634,6 +634,16 @@ class RepositorioSaludActuadores:
         ).fetchone()
         return self._a_entidad(fila) if fila else None
 
+    def ultimo_por_parcela(self, parcela_id: int) -> RegistroSaludActuador | None:
+        fila = self._db.execute(
+            """SELECT s.* FROM salud_actuadores_log s
+               JOIN eventos_riego r ON r.id = s.evento_riego_id
+               WHERE r.parcela_id = ?
+               ORDER BY r.ts_epoch DESC, s.id DESC LIMIT 1""",
+            (parcela_id,),
+        ).fetchone()
+        return self._a_entidad(fila) if fila else None
+
 
 class RepositorioIncidenciaRiego:
     def __init__(self, conexion: sqlite3.Connection):
