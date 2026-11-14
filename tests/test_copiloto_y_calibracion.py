@@ -28,6 +28,7 @@ from aquaterra.infrastructure.db.repositorios import (
 )
 from aquaterra.infrastructure.ia import (
     MODELO_GEMINI_POR_DEFECTO,
+    ConfiguracionIA,
     normalizar_modelo_gemini,
     parsear_respuesta_json_ia,
 )
@@ -119,6 +120,8 @@ def test_ciclo_completo_copiloto_reglas_aplicacion_rollback_y_exportacion_jsonl(
                     estacion_id=est.id,
                 )
             )
+
+        cont.copiloto.orquestador.config = ConfiguracionIA(proveedor_preferido="local_reglas")
 
         # 1. Consulta por exceso de riego ("se nos pasó la mano")
         r1 = cont.copiloto.consultar_copiloto(

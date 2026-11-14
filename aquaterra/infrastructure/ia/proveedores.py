@@ -78,6 +78,9 @@ class ConfiguracionIA:
         default_factory=lambda: os.environ.get("AQUATERRA_OLLAMA_MODEL", MODELO_OLLAMA_POR_DEFECTO)
     )
     timeout_segundos: float = 12.0
+    ollama_timeout_segundos: float = field(
+        default_factory=lambda: float(os.environ.get("AQUATERRA_OLLAMA_TIMEOUT", "90.0"))
+    )
 
 
 class ProveedorCopilotoProtocol(Protocol):
@@ -239,7 +242,7 @@ class ClienteOllamaLocal:
         *,
         base_url: str = "http://127.0.0.1:11434",
         modelo: str = MODELO_OLLAMA_POR_DEFECTO,
-        timeout_segundos: float = 12.0,
+        timeout_segundos: float = 90.0,
     ) -> None:
         self._base_url = base_url.rstrip("/")
         self._modelo = modelo.strip() or MODELO_OLLAMA_POR_DEFECTO
@@ -265,6 +268,10 @@ class ClienteOllamaLocal:
                     {"role": "user", "content": construir_prompt_contexto_copiloto(ctx)},
                 ],
                 "format": ESQUEMA_JSON_RESPUESTA_COPILOTO,
+                "options": {
+                    "temperature": 0.2,
+                    "num_predict": 650,
+                },
                 "stream": False,
             }
         ).encode("utf-8")
@@ -345,7 +352,7 @@ class OrquestadorIA:
             cliente_ollama = ClienteOllamaLocal(
                 base_url=self.config.ollama_base_url,
                 modelo=self.config.ollama_modelo,
-                timeout_segundos=self.config.timeout_segundos,
+                timeout_segundos=self.config.ollama_timeout_segundos,
             )
             if modo == "ollama" or cliente_ollama.esta_disponible():
                 try:

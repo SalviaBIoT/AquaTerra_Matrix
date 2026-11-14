@@ -119,7 +119,9 @@ def construir_system_instruction_terrabit() -> str:
         "y respeta sus cotas físicas y paso máximo por iteración:\n"
         f"{catalogo_txt}\n"
         "4. Si el usuario solo pide un resumen o consulta informativa sin requerir recalibración, "
-        "devuelve `ajustes_propuestos` como un objeto vacío `{}`."
+        "devuelve `ajustes_propuestos` como un objeto vacío `{}`.\n"
+        "5. Sé directo y conciso: máximo 2 o 3 oraciones claras en `diagnostico_tecnico` y en "
+        "`justificacion_agronomica`."
     )
 
 
