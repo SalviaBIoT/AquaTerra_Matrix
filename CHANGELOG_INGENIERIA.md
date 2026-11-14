@@ -8,6 +8,21 @@
 
 ---
 
+## [v4.1.0a2] - 2026-11-13: Fase B2 — Motor Analítico de Series Temporales, Ventana Móvil SQLite y Pulso 24h
+
+### 1. Hitos Estructurales Implementados (Ver [REP-003](DEVELOP/reportes/REP-003_fase_b2_motor_analitico_ventana_movil_y_pulso_24h.md))
+- **Paquete Analítico de Dominio Puro (`aquaterra/core/analitica/`):**
+  - `series.py`: Cálculo de ventanas móviles (`30m`, `1h`, `6h`, `24h`, `7d`), pendiente horaria por mínimos cuadrados ordinarios (`tasa_cambio_por_hora` para tasa de secado edáfico $\Delta\theta/\Delta t$), proyección de horas hasta estrés hídrico (`tiempo_hasta_umbral_horas`), correlación bivariada de Pearson $r$ (`correlacion_bivariada`) y promedio vectorial circular de viento (`promedio_vectorial_grados`).
+  - `pulso.py`: Motor determinista offline `construir_resumen_pulso_24h()` con indicadores especializados por familia (`IndicadoresPulsoInti`, `IndicadoresPulsoInBeersa`, `IndicadoresPulsoSigatoka`, `IndicadoresPulsoConservacion`), detección de alertas y síntesis ejecutiva.
+- **Window Functions Nativas en SQLite3 (`aquaterra/infrastructure/db/repositorios.py`):**
+  Nuevos métodos `serie_rango()`, `series_estacion_rango()` y `serie_ventana_movil()` (`AVG/MIN/MAX OVER (ORDER BY ts_epoch RANGE BETWEEN ? PRECEDING AND CURRENT ROW)`) en `RepositorioLecturas`.
+- **Servicio de Aplicación (`aquaterra/application/pulso_servicio.py`):**
+  `NodePulseService` integrado en `Contenedor.pulso` con `obtener_pulso_24h()`, `consultar_ventana_movil()` y `comparar_variables()`.
+- **Verificación Automatizada:**
+  Suite de **64 pruebas en `pytest`** (`0 warnings`) y **`ruff check .`** (`All checks passed!`).
+
+---
+
 ## [v4.1.0a1] - 2026-11-13: Fase B1 — Esquema SQLite v2, Repositorios de Control/Calibración e Ingesta Universal de 4 Familias
 
 ### 1. Hitos Estructurales Implementados (Ver [REP-002](DEVELOP/reportes/REP-002_fase_b1_esquema_v2_e_ingesta_universal.md))

@@ -11,6 +11,7 @@ import logging
 import sqlite3
 from dataclasses import dataclass, field
 
+from aquaterra.application.pulso_servicio import NodePulseService
 from aquaterra.application.servicios import (
     ServicioAutenticacion,
     ServicioMonitor,
@@ -33,12 +34,14 @@ class Contenedor:
     parcelas: ServicioParcelas = field(init=False)
     riego: ServicioRiego = field(init=False)
     monitor: ServicioMonitor = field(init=False)
+    pulso: NodePulseService = field(init=False)
 
     def __post_init__(self) -> None:
         self.auth = ServicioAutenticacion(self.conexion)
         self.parcelas = ServicioParcelas(self.conexion)
         self.riego = ServicioRiego(self.conexion)
         self.monitor = ServicioMonitor(self.conexion)
+        self.pulso = NodePulseService(self.conexion)
 
     def cerrar(self) -> None:
         try:
