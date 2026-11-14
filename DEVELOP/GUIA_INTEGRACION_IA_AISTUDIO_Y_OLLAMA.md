@@ -15,7 +15,7 @@ El motor de Inteligencia Artificial ya está **100 % programado, probado y conec
 
 El sistema opera en **Cascada Automática de 3 Niveles (`AQUATERRA_IA_PROVEEDOR="auto"`)**:
 1. **Nivel 1 (Nube):** Si detecta tu clave `GEMINI_API_KEY`, consulta a **`gemini-4-hydrogen`** en Google AI Studio usando la API moderna **Interactions** con esquema JSON estricto (`ESQUEMA_JSON_RESPUESTA_COPILOTO`).
-2. **Nivel 2 (PC Local Offline):** Si no hay internet o no hay `GEMINI_API_KEY`, verifica en `1.2 segundos` si tienes **Ollama** encendido en `http://127.0.0.1:11434` y consulta al modelo local (`gemma3:4b` por defecto).
+2. **Nivel 2 (PC Local Offline):** Si no hay internet o no hay `GEMINI_API_KEY`, verifica en `1.2 segundos` si tienes **Ollama** encendido en `http://127.0.0.1:11434` y consulta al modelo local (`qwen2.5:3b` por defecto, optimizado para GPUs de 4 GB VRAM).
 3. **Nivel 3 (Determinista Nativo):** Si estás en el páramo o en una finca sin red y sin Ollama corriendo, responde al instante con `AsesorDeterministaCopiloto` (`local_reglas`).
 4. **Filtro Anti-Alucinación Siempre Activo:** Sea cual sea el modelo que responda, `auditar_y_acotar_ajustes()` intercepta la salida antes de guardarla en SQLite y recorta cualquier parámetro fuera de rango físico.
 
@@ -69,21 +69,17 @@ Cuando lleves tu portátil a una finca cafetera/platanera o al páramo sin inter
    winget install Ollama.Ollama
    ```
 
-### Paso 2: Descargar un Modelo Ligero Especializado en Razonamiento Técnico
-En PowerShell, descarga uno de estos dos modelos (pesan entre `2.0 GB` y `3.3 GB` y corren fluido en CPU/GPU de portátil):
+### Paso 2: Descargar el Modelo Optimizado para tu GPU (4 GB VRAM)
+En PowerShell, descarga `qwen2.5:3b` (`~1.9 GB`, corre al `100 % GPU` en una GTX 1650 de 4 GB con alta precisión en JSON):
 ```powershell
-# Opción A (Recomendada — Familia Gemma de Google, 4B parámetros):
-ollama pull gemma3:4b
-
-# Opción B (Alternativa ultraligera y muy precisa en JSON, 3B parámetros):
 ollama pull qwen2.5:3b
 ```
 
 ### Paso 3: Conectar `AquaTerra Matrix` con tu Ollama Local
-Si estás sin internet (o sin `GEMINI_API_KEY`), `AquaTerra Matrix` en modo `"auto"` detectará automáticamente a Ollama en `http://127.0.0.1:11434`. Si deseas forzar el uso exclusivo de Ollama aunque tengas internet:
+Si estás sin internet (o sin `GEMINI_API_KEY`), `AquaTerra Matrix` en modo `"auto"` detectará automáticamente a Ollama en `http://127.0.0.1:11434` y usará `qwen2.5:3b` por defecto. Si deseas forzar el uso exclusivo de Ollama aunque tengas internet:
 ```powershell
 $env:AQUATERRA_IA_PROVEEDOR = "ollama"
-$env:AQUATERRA_OLLAMA_MODEL = "gemma3:4b"
+$env:AQUATERRA_OLLAMA_MODEL = "qwen2.5:3b"
 ```
 
 ---

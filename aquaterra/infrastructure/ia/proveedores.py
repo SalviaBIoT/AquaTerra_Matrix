@@ -35,7 +35,7 @@ from aquaterra.core.copiloto.cotas_calibracion import (
 log = logging.getLogger(__name__)
 
 MODELO_GEMINI_POR_DEFECTO = "gemini-4-hydrogen"
-MODELO_OLLAMA_POR_DEFECTO = "gemma3:4b"
+MODELO_OLLAMA_POR_DEFECTO = "qwen2.5:3b"
 PREFIJOS_GEMINI_OBSOLETOS = ("gemini-2.5-", "gemini-2.0-", "gemini-1.5-")
 
 
