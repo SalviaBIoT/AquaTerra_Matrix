@@ -17,14 +17,15 @@ __pycache__/
 .Python
 
 # Empaquetado y distribución
-build/
+/build/
 develop-eggs/
-dist/
+/dist/
+frontend/dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+/lib/
+/lib64/
 parts/
 sdist/
 var/
@@ -40,11 +41,12 @@ htmlcov/
 .mypy_cache/
 .ruff_cache/
 
-# Bases de datos locales operativas y backups pesados (SQLite / WAL)
+# Bases de datos locales operativas, caché WebView y backups pesados (SQLite / WAL)
+*.db
 *.db-journal
 *.db-shm
 *.db-wal
-data/runtime/*.db
+data/runtime/
 data/ingest_staging/
 data/audio_raw/*.wav
 
@@ -62,3 +64,9 @@ desktop.ini
 *.log
 *.tmp
 *.bak
+
+# Dependencias Node.js y cachés locales de Vite / TypeScript
+frontend/node_modules/
+frontend/.vite/
+frontend/*.tsbuildinfo
+

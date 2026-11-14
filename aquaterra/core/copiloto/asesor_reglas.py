@@ -22,6 +22,201 @@ class AsesorDeterministaCopiloto:
 
     proveedor_id: str = "local_reglas"
 
+    @staticmethod
+    def _es_charla_conversacional(texto: str) -> bool:
+        """Detecta saludos o preguntas abiertas de identidad sin petición técnica."""
+        disparadores_tecnicos = (
+            "humedad",
+            "suelo",
+            "vpd",
+            "temp",
+            "presion",
+            "presión",
+            "adc",
+            "calibr",
+            "riego",
+            "regue",
+            "regué",
+            "alerta",
+            "nido",
+            "colmena",
+            "sigatoka",
+            "paramo",
+            "páramo",
+            "ruido",
+            "ema",
+            "analiza",
+            "diagnost",
+            "audit",
+            "umbral",
+            "lluvia",
+            "estres",
+            "estrés",
+            "riesgo",
+            "paso la mano",
+            "pasó la mano",
+            "satur",
+            "insuficien",
+        )
+        if any(tok in texto for tok in disparadores_tecnicos):
+            return False
+        saludos_o_identidad = (
+            "hola",
+            "buenos dias",
+            "buenos días",
+            "buenas tardes",
+            "buenas noches",
+            "buenas",
+            "hey",
+            "saludos",
+            "que tal",
+            "qué tal",
+            "como estas",
+            "cómo estás",
+            "quien eres",
+            "quién eres",
+            "que haces",
+            "qué haces",
+            "que puedes",
+            "qué puedes",
+            "qué mas puedes",
+            "qué más puedes",
+            "gracias",
+            "ayuda",
+            "mandarino",
+            "sugerencia",
+            "sugerencias",
+            "que recomiendas",
+            "qué recomiendas",
+            "al respecto",
+            "pasos",
+        )
+        return any(s in texto for s in saludos_o_identidad)
+
+    def _responder_como_mandarino(
+        self, ctx: ContextoDiagnosticoCopiloto, alertas: list[str]
+    ) -> PropuestaCopiloto:
+        """Genera respuesta cálida y contextualizada (saludo, capacidades o pasos prácticos)."""
+        texto = ctx.mensaje_usuario.lower()
+        pulso = ctx.resumen_pulso
+
+        if any(tok in texto for tok in ("sugerencia", "recomiend", "al respecto", "pasos", "solucion")):
+            if pulso is not None and pulso.alertas_detectadas:
+                alerta_txt = "; ".join(pulso.alertas_detectadas[:2])
+                if pulso.tipo_estacion.value == "inbeersa_abejas":
+                    msg = (
+                        f"Para atender {pulso.nombre_estacion} ({alerta_txt}), te recomiendo 3 pasos inmediatos: "
+                        "1) inspeccionar sellado térmico y corriente de aire frío en la piquera/tapa del nido; "
+                        "2) verificar ventilación si la humedad interna supera 85 % para evitar condensación; "
+                        "3) revisar alimentación y cableado I2C/1-Wire del nodo ESP32 por posibles cortes de trama."
+                    )
+                else:
+                    msg = (
+                        f"Respecto a {pulso.nombre_estacion} ({alerta_txt}), mis recomendaciones prácticas son: "
+                        "1) inspeccionar sensor capacitivo/drenaje en campo antes de relajar umbrales; "
+                        "2) confirmar estabilidad de paquetes LoRa/Serial y batería solar; "
+                        "3) si el sensor está estable y deseas ajustar umbrales, pídeme 'recalibrar con cotas seguras'."
+                    )
+            elif ctx.panorama_ecosistema:
+                criticas = [
+                    n for n in ctx.panorama_ecosistema if n.get("severidad") in ("critico", "atencion")
+                ]
+                if criticas:
+                    foco = criticas[0]
+                    msg = (
+                        f"Te sugiero priorizar {foco.get('nombre')}, que presenta estado {foco.get('severidad')}. "
+                        "Ábrela en la columna izquierda para revisar el sensor afectado, validar si la lectura "
+                        "responde a una condición real de campo y ejecutar calibración segura si hace falta."
+                    )
+                else:
+                    msg = (
+                        "Tus estaciones activas están estables. Como mantenimiento preventivo te "
+                        "sugiero revisar la completitud 24h de cada nodo y validar Open-Meteo antes de regar."
+                    )
+            else:
+                msg = (
+                    "Para darte pasos exactos, selecciona una estación a la izquierda o cuéntame si "
+                    "revisas suelo, riego automático, colmena Melipona o conectividad del ESP32."
+                )
+            return PropuestaCopiloto(
+                diagnostico_tecnico=msg,
+                justificacion_agronomica="",
+                ajustes_propuestos={},
+                confianza=0.92,
+                alertas_consideradas=tuple(dict.fromkeys(alertas)),
+                proveedor_ia=self.proveedor_id,
+            )
+
+        if any(tok in texto for tok in ("qué puedes", "que puedes", "qué más puedes", "que haces", "qué haces")):
+            msg = (
+                "Puedo acompañarte en 4 frentes sin mezclar hilos: 1) diagnosticar telemetría viva "
+                "(humedad edáfica, VPD, temperatura de nido y lluvia); 2) explicar por qué se activa "
+                "un candado antes de regar; 3) proponer recalibraciones auditadas dentro de cotas "
+                "metrológicas con rollback en 1 clic; 4) cruzar el estado global de tus estaciones."
+            )
+            return PropuestaCopiloto(
+                diagnostico_tecnico=msg,
+                justificacion_agronomica="",
+                ajustes_propuestos={},
+                confianza=0.95,
+                alertas_consideradas=tuple(dict.fromkeys(alertas)),
+                proveedor_ia=self.proveedor_id,
+            )
+        if pulso is not None and pulso.alertas_detectadas:
+            primera = pulso.alertas_detectadas[0]
+            msg = (
+                f"¡Hola! Soy Mandarino, tu copiloto Bio-IoT en AquaTerra Matrix. "
+                f"Estoy en línea siguiendo a {pulso.nombre_estacion} y detecté una novedad activa: "
+                f"{primera}. Si quieres, la analizamos juntos o revisamos si conviene ajustar umbrales."
+            )
+        elif pulso is not None:
+            resumen_vars: list[str] = []
+            for clave in ("suelo_a", "temp_aire", "vpd", "temp_interna_c"):
+                est = pulso.variables.get(clave)
+                if est is not None:
+                    resumen_vars.append(f"{clave}: {est.ultimo_valor:.1f}")
+            contexto_txt = f" ({' · '.join(resumen_vars[:3])})" if resumen_vars else ""
+            msg = (
+                f"¡Hola! Soy Mandarino, tu copiloto agronómico y Bio-IoT. "
+                f"Veo a {pulso.nombre_estacion} operando en estado "
+                f"{pulso.severidad.value}{contexto_txt}. Puedo explicarte variables de "
+                "telemetría, revisar alertas de tus nodos o auditar cambios seguros. "
+                "¿Por dónde empezamos?"
+            )
+        elif ctx.panorama_ecosistema:
+            criticas = [
+                n for n in ctx.panorama_ecosistema if n.get("severidad") in ("critico", "atencion")
+            ]
+            if criticas:
+                foco = criticas[0]
+                alertas_n = foco.get("alertas") or []
+                detalle = f": {alertas_n[0]}" if alertas_n else ""
+                msg = (
+                    f"¡Hola! Soy Mandarino, tu copiloto Bio-IoT en AquaTerra Matrix. "
+                    f"Revisando todo tu ecosistema detecté prioridad en {foco.get('nombre')}{detalle}. "
+                    "Puedes abrir esa estación en el panel izquierdo o preguntarme por cualquier nodo."
+                )
+            else:
+                msg = (
+                    f"¡Hola! Soy Mandarino, tu copiloto inteligente en AquaTerra Matrix. "
+                    f"Veo {len(ctx.panorama_ecosistema)} estación(es) activas operando en rango normal. "
+                    "Elige una estación a la izquierda para profundizar o pregúntame lo que necesites."
+                )
+        else:
+            msg = (
+                "¡Hola! Soy Mandarino, tu copiloto inteligente del ecosistema TerraBit. "
+                "Puedo diagnosticar estaciones, interpretar tendencias hídricas o térmicas "
+                "y auditar calibraciones seguras. ¿Qué nodo te gustaría revisar hoy?"
+            )
+        return PropuestaCopiloto(
+            diagnostico_tecnico=msg,
+            justificacion_agronomica="",
+            ajustes_propuestos={},
+            confianza=0.95,
+            alertas_consideradas=tuple(dict.fromkeys(alertas)),
+            proveedor_ia=self.proveedor_id,
+        )
+
     def diagnosticar(self, ctx: ContextoDiagnosticoCopiloto) -> PropuestaCopiloto:
         texto = ctx.mensaje_usuario.lower()
         actuales: dict[str, float] = dict(PARAMETROS_CALIBRACION_POR_DEFECTO)
@@ -32,6 +227,9 @@ class AsesorDeterministaCopiloto:
         alertas: list[str] = list(ctx.candados_activos)
         if ctx.resumen_pulso is not None:
             alertas.extend(ctx.resumen_pulso.alertas_detectadas)
+
+        if self._es_charla_conversacional(texto):
+            return self._responder_como_mandarino(ctx, alertas)
 
         ajustes_brutos: dict[str, float] = {}
         bloques_diag: list[str] = []

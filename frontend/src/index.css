@@ -1,0 +1,387 @@
+@import "@fontsource/plus-jakarta-sans/400.css";
+@import "@fontsource/plus-jakarta-sans/500.css";
+@import "@fontsource/plus-jakarta-sans/600.css";
+@import "@fontsource/plus-jakarta-sans/700.css";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
+@import "@fontsource/jetbrains-mono/600.css";
+
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco,
+    Consolas, monospace;
+}
+
+/* ==========================================================================
+   AquaTerra Matrix — Bio-Tech Orgánico Dual Theme Tokens
+   Light: Field Daylight | Dark: Obsidian Canopy
+   ========================================================================== */
+:root {
+  color-scheme: light dark;
+
+  --bg-canvas: #f5f7f4;
+  --bg-surface: #ffffff;
+  --bg-elevated: #eef2ed;
+  --bg-subtle: #e3e9e1;
+
+  --text-primary: #0f1713;
+  --text-secondary: #4b5b52;
+  --text-muted: #7c8d82;
+
+  --accent-primary: #059669;
+  --accent-primary-hover: #047857;
+  --accent-primary-soft: rgba(5, 150, 105, 0.11);
+  --accent-contrast: #ffffff;
+
+  --status-optimal: #059669;
+  --status-optimal-soft: rgba(5, 150, 105, 0.12);
+  --status-warning: #d97706;
+  --status-warning-soft: rgba(217, 119, 6, 0.13);
+  --status-critical: #dc2626;
+  --status-critical-soft: rgba(220, 38, 38, 0.12);
+  --status-info: #0284c7;
+  --status-info-soft: rgba(2, 132, 199, 0.12);
+
+  --border-subtle: rgba(15, 23, 19, 0.09);
+  --border-strong: rgba(15, 23, 19, 0.16);
+  --border-focus: #059669;
+
+  --shadow-card: 0 1px 2px rgba(15, 23, 19, 0.04),
+    0 6px 18px rgba(15, 23, 19, 0.03);
+  --shadow-popover: 0 12px 32px rgba(15, 23, 19, 0.14);
+
+  --scrollbar-track: #e8ede6;
+  --scrollbar-thumb: #95a59b;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  accent-color: var(--accent-primary);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg-canvas: #0a0e0c;
+    --bg-surface: #111814;
+    --bg-elevated: #17211c;
+    --bg-subtle: #1d2923;
+
+    --text-primary: #f1f5f2;
+    --text-secondary: #98a69e;
+    --text-muted: #5f6e65;
+
+    --accent-primary: #34d399;
+    --accent-primary-hover: #6ee7b7;
+    --accent-primary-soft: rgba(52, 211, 153, 0.12);
+    --accent-contrast: #062116;
+
+    --status-optimal: #34d399;
+    --status-optimal-soft: rgba(52, 211, 153, 0.14);
+    --status-warning: #fbbf24;
+    --status-warning-soft: rgba(251, 191, 36, 0.14);
+    --status-critical: #f87171;
+    --status-critical-soft: rgba(248, 113, 113, 0.14);
+    --status-info: #38bdf8;
+    --status-info-soft: rgba(56, 189, 248, 0.14);
+
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.15);
+    --border-focus: #34d399;
+
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3),
+      0 8px 24px rgba(0, 0, 0, 0.22);
+    --shadow-popover: 0 16px 40px rgba(0, 0, 0, 0.55);
+
+    --scrollbar-track: #111814;
+    --scrollbar-thumb: #314239;
+  }
+}
+
+:root[data-theme="dark"],
+:root:has(> head > meta[name="color-scheme"][content="dark"]) {
+  color-scheme: dark;
+  --bg-canvas: #0a0e0c;
+  --bg-surface: #111814;
+  --bg-elevated: #17211c;
+  --bg-subtle: #1d2923;
+
+  --text-primary: #f1f5f2;
+  --text-secondary: #98a69e;
+  --text-muted: #5f6e65;
+
+  --accent-primary: #34d399;
+  --accent-primary-hover: #6ee7b7;
+  --accent-primary-soft: rgba(52, 211, 153, 0.12);
+  --accent-contrast: #062116;
+
+  --status-optimal: #34d399;
+  --status-optimal-soft: rgba(52, 211, 153, 0.14);
+  --status-warning: #fbbf24;
+  --status-warning-soft: rgba(251, 191, 36, 0.14);
+  --status-critical: #f87171;
+  --status-critical-soft: rgba(248, 113, 113, 0.14);
+  --status-info: #38bdf8;
+  --status-info-soft: rgba(56, 189, 248, 0.14);
+
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.15);
+  --border-focus: #34d399;
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3),
+    0 8px 24px rgba(0, 0, 0, 0.22);
+  --shadow-popover: 0 16px 40px rgba(0, 0, 0, 0.55);
+
+  --scrollbar-track: #111814;
+  --scrollbar-thumb: #314239;
+}
+
+:root[data-theme="light"],
+:root:has(> head > meta[name="color-scheme"][content="light"]) {
+  color-scheme: light;
+}
+
+@supports not (scrollbar-color: auto) {
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+  *::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 999px;
+  }
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  background-color: var(--bg-canvas);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Indicadores de foco accesibles globales */
+:where(a[href], button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+/* Números tabulares para métricas, tablas y telemetría */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Visibilidad solo para lectores de pantalla y skip-link */
+.visually-hidden:where(:not(:focus-within, :active)) {
+  position: absolute !important;
+  clip-path: inset(50%) !important;
+  overflow: hidden !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  white-space: nowrap !important;
+}
+
+.skip-link:focus {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 9999;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background-color: var(--accent-primary);
+  color: var(--accent-contrast);
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: var(--shadow-popover);
+}
+
+/* Diálogos nativos <dialog> con contención de scroll sin bloquear <body> */
+dialog:modal {
+  overscroll-behavior: contain;
+  border: 1px solid var(--border-subtle);
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-popover);
+  max-height: calc(100dvh - 2rem);
+}
+
+dialog::backdrop {
+  background: rgba(6, 10, 8, 0.65);
+  backdrop-filter: blur(4px);
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+/* Popovers nativos con fallback para polyfill */
+[popover]:is(:popover-open, .\:popover-open) {
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-popover);
+}
+
+/* Validación tras interacción real (sin rojo prematuro) */
+.at-input:is(:user-invalid, .user-invalid-fallback) {
+  border-color: var(--status-critical);
+}
+
+.at-input:is(:user-invalid, .user-invalid-fallback) + .at-error-msg {
+  display: flex;
+}
+
+.at-error-msg {
+  display: none;
+  color: var(--status-critical);
+}
+
+/* Clases utilitarias de superficie Bio-Tech */
+.surface-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  box-shadow: var(--shadow-card);
+}
+
+.surface-elevated {
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+}
+
+@keyframes pulse-skeleton {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+.skeleton {
+  animation: pulse-skeleton 1.5s ease-in-out infinite;
+  background-color: var(--bg-subtle);
+  border-radius: 8px;
+}
+
+/* ==========================================================================
+   Mandarino IA Studio — Paleta Naranja Futurista y Micro-animaciones
+   ========================================================================== */
+:root {
+  --mandarino-primary: #f97316;
+  --mandarino-bright: #fb923c;
+  --mandarino-soft: rgba(249, 115, 22, 0.13);
+  --mandarino-border: rgba(249, 115, 22, 0.32);
+  --mandarino-glow: 0 0 28px rgba(249, 115, 22, 0.28);
+}
+
+@keyframes mandarino-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 18px rgba(249, 115, 22, 0.28),
+      inset 0 0 12px rgba(255, 255, 255, 0.22);
+  }
+  50% {
+    transform: scale(1.045);
+    box-shadow: 0 0 34px rgba(251, 146, 60, 0.5),
+      inset 0 0 16px rgba(255, 255, 255, 0.34);
+  }
+}
+
+@keyframes mandarino-orbit {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes mandarino-wave {
+  0%,
+  80%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  40% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+@keyframes mandarino-msg-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mandarino-orb {
+  background: radial-gradient(
+    circle at 32% 28%,
+    #fdba74 0%,
+    #f97316 55%,
+    #c2410c 100%
+  );
+  animation: mandarino-breathe 3.8s ease-in-out infinite;
+}
+
+.mandarino-ring {
+  animation: mandarino-orbit 14s linear infinite;
+}
+
+.mandarino-dot {
+  animation: mandarino-wave 1.15s ease-in-out infinite;
+}
+
+.mandarino-dot:nth-child(2) {
+  animation-delay: 0.16s;
+}
+
+.mandarino-dot:nth-child(3) {
+  animation-delay: 0.32s;
+}
+
+.mandarino-bubble-in {
+  animation: mandarino-msg-in 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes mandarino-sway {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(1.5deg);
+  }
+}
+
+.mandarino-sway {
+  animation: mandarino-sway 4.4s ease-in-out infinite;
+  filter: drop-shadow(0 6px 14px rgba(249, 115, 22, 0.25));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mandarino-orb,
+  .mandarino-ring,
+  .mandarino-dot,
+  .mandarino-bubble-in,
+  .mandarino-sway {
+    animation: none !important;
+  }
+}

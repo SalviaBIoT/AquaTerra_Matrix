@@ -27,6 +27,7 @@ from aquaterra.core.domain.errores import (
     ErrorAutenticacion,
     ErrorDominio,
     ErrorPermiso,
+    ErrorSesionExpirada,
     ErrorValidacion,
 )
 
@@ -39,6 +40,7 @@ __all__ = [
     "ErrorAutenticacion",
     "ErrorDominio",
     "ErrorPermiso",
+    "ErrorSesionExpirada",
     "ErrorValidacion",
     "Estacion",
     "EstadoRiegoProgramado",

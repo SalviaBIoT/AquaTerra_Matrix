@@ -28,6 +28,11 @@ class ContextoDiagnosticoCopiloto:
     parcela: Parcela | None = None
     ultima_incidencia_riego: IncidenciaRiego | None = None
     candados_activos: tuple[str, ...] = ()
+    panorama_ecosistema: tuple[dict[str, Any], ...] = ()
+    ultimos_turnos: tuple[dict[str, str], ...] = ()
+    clima_pronostico: dict[str, Any] | None = None
+    fecha_hora_local: str | None = None
+    parcelas_relacionadas: tuple[dict[str, Any], ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -49,14 +54,19 @@ ESQUEMA_JSON_RESPUESTA_COPILOTO: dict[str, Any] = {
         "diagnostico_tecnico": {
             "type": "string",
             "description": (
-                "Diagnóstico directo en español técnico sobre lo ocurrido en la estación o parcela, "
-                "citando las variables medidas (humedad, VPD, delta post-riego, ADC, temperatura)."
+                "Respuesta principal de Mandarino en español claro. Si el usuario hace una "
+                "consulta técnica o diagnóstica, describe con rigor lo ocurrido citando "
+                "variables medidas reales. Si solo saluda o conversa ('Hola', 'Quién eres'), "
+                "responde con calidez en primera persona como Mandarino y resume en 1 frase "
+                "el estado vivo de la estación si aporta contexto."
             ),
         },
         "justificacion_agronomica": {
             "type": "string",
             "description": (
-                "Explicación física y agronómica de por qué se sugieren o no ajustes de calibración."
+                "Explicación física y agronómica de por qué se sugieren o no ajustes de calibración. "
+                "Déjalo como cadena vacía \"\" si el usuario solo saludó o conversó sin pedir "
+                "análisis técnico ni cambios."
             ),
         },
         "ajustes_propuestos": {
@@ -107,22 +117,91 @@ def construir_system_instruction_terrabit() -> str:
     ]
     catalogo_txt = "\n".join(lineas_cotas)
     return (
-        "Eres el Copiloto de Ingeniería Agronómica, Bio-IoT y Metrología del Ecosistema TerraBit "
-        "(AquaTerra Matrix v4.1). Tu rol es asistir al ingeniero o productor en el diagnóstico de "
-        "estaciones ESP32/ESP32-S3 (Nodo INTI, InBeersa Melipona, Sigatoka Plátano y Conservación "
-        "Páramo Polylepis) y proponer ajustes seguros de calibración.\n\n"
+        "Te llamas **Mandarino**: eres el Copiloto de Ingeniería Agronómica, Bio-IoT y Metrología "
+        "del Ecosistema TerraBit (AquaTerra Matrix). Tu personalidad es cercana, clara, futurista y "
+        "colaborativa; asistes al ingeniero o productor en el monitoreo y diagnóstico de estaciones "
+        "ESP32/ESP32-S3 (Nodo INTI, InBeersa Melipona, Sigatoka Plátano y Conservación Páramo "
+        "Polylepis) y en calibraciones seguras.\n\n"
         "REGLAS INNEGOCIABLES:\n"
-        "1. Responde SIEMPRE en español técnico, claro y riguroso, únicamente en formato JSON "
-        "que cumpla el esquema solicitado.\n"
-        "2. Nunca inventes lecturas de sensores que no estén en el bloque de contexto.\n"
-        "3. Si propones cambios en `ajustes_propuestos`, usa EXCLUSIVAMENTE las siguientes claves "
+        "1. Responde SIEMPRE en español natural y en PRIMERA PERSONA ('Hola, soy Mandarino...', "
+        "'Te sugiero...'), únicamente en formato JSON válido que cumpla el esquema. PROHIBIDO "
+        "hablar del usuario en tercera persona ('el operador realizó un saludo', 'el usuario').\n"
+        "2. MODO CONVERSACIONAL NATURAL: Si el usuario saluda ('Hola', 'Buenos días', 'Qué tal'), "
+        "agradece o pregunta qué puedes hacer, respóndele con cercanía como Mandarino en "
+        "`diagnostico_tecnico` (preséntate brevemente, menciona en 1 frase si hay una novedad "
+        "puntual y ofrece ayudar). En charla casual deja `justificacion_agronomica` en \"\" y "
+        "`ajustes_propuestos` en `{}`.\n"
+        "3. CONTINUIDAD DE HILO Y ANTI-REPETICIÓN: Lee `historial_hilo_actual` antes de contestar. "
+        "Si el usuario hace seguimiento ('¿qué sugerencias me das?', '¿cómo lo soluciono?', "
+        "'¿al respecto?'), responde DIRECTAMENTE a esa pregunta con pasos prácticos de campo, "
+        "hardware o manejo agronómico SIN volver a recitar el mismo reporte numérico del turno previo.\n"
+        "4. FORMATO ENRIQUECIDO Y RIGOR TÉCNICO: Puedes usar Markdown limpio (listas con viñetas, "
+        "**negritas** para cifras clave y tablas breves al comparar cotas) dentro de `diagnostico_tecnico`. "
+        "Nunca inventes lecturas que no estén en el contexto. Si el payload indica `modo: 'charla_ligera'`, "
+        "mantén `ajustes_propuestos` OBLIGATORIAMENTE como `{}`.\n"
+        "5. CONSCIENCIA METEOROLÓGICA EN TIEMPO REAL: Si el contexto incluye "
+        "`clima_actual_y_pronostico` (proveniente de Open-Meteo para las coordenadas reales de la "
+        "estación), TIENES acceso directo al clima exterior y pronóstico horario. Úsalo con cifras "
+        "exactas (temperatura exterior, humedad relativa, probabilidad/acumulado de lluvia, viento y "
+        "$ET_0$) cruzándolo con el microclima medido por los sensores ESP32/ESP32-S3 cuando el usuario "
+        "pregunte por el clima, lluvia o condiciones del día. Nunca digas que careces de datos del clima "
+        "si ese bloque está presente.\n"
+        "6. VISIÓN GLOBAL Y SEGMENTACIÓN: Estás conversando en el hilo seleccionado (puede ser "
+        "una estación puntual o la charla general del ecosistema). Si `panorama_global_estaciones` "
+        "está presente, úsalo con criterio proactivo sin mezclar hilos.\n"
+        "7. Si propones cambios en `ajustes_propuestos`, usa EXCLUSIVAMENTE estas claves oficiales "
         "y respeta sus cotas físicas y paso máximo por iteración:\n"
         f"{catalogo_txt}\n"
-        "4. Si el usuario solo pide un resumen o consulta informativa sin requerir recalibración, "
-        "devuelve `ajustes_propuestos` como un objeto vacío `{}`.\n"
-        "5. Sé directo y conciso: máximo 2 o 3 oraciones claras en `diagnostico_tecnico` y en "
-        "`justificacion_agronomica`."
+        "8. Si no hace falta recalibrar, devuelve `ajustes_propuestos` como `{}`."
     )
+
+
+def es_consulta_ligera(mensaje: str) -> bool:
+    """Detecta saludos o charla sin intención explícita de recalibrar ni consultar clima/técnica."""
+    txt = mensaje.lower().strip()
+    claves_tecnicas = (
+        "calibr",
+        "umbral",
+        "lamina",
+        "lámina",
+        "adc",
+        "audita",
+        "recalibr",
+        "riego",
+        "regar",
+        "satur",
+        "vpd",
+        "suelo",
+        "humedad",
+        "temperatura",
+        "nido",
+        "alerta",
+        "anomal",
+        "analiz",
+        "diagnost",
+        "reporte",
+        "estado",
+        "pulso",
+        "lluvia",
+        "llover",
+        "clima",
+        "pronost",
+        "pronóst",
+        "meteor",
+        "viento",
+        "et0",
+        "calor",
+        "frio",
+        "frío",
+        "estrés",
+        "estres",
+        "sugerencia",
+        "pasos",
+        "variables",
+    )
+    if any(tok in txt for tok in claves_tecnicas):
+        return False
+    return len(txt) <= 120
 
 
 def construir_prompt_contexto_copiloto(ctx: ContextoDiagnosticoCopiloto) -> str:
@@ -167,16 +246,53 @@ def construir_prompt_contexto_copiloto(ctx: ContextoDiagnosticoCopiloto) -> str:
             "observaciones": inc.observaciones,
         }
 
-    payload = {
-        "consulta_operador": ctx.mensaje_usuario,
-        "version_calibracion_activa": ctx.version_calibracion_actual,
-        "parametros_calibracion_actuales": ctx.parametros_actuales,
-        "pulso_estacion_24h": resumen_dict,
-        "parcela_asociada": parcela_dict,
-        "ultima_incidencia_riego": incidencia_dict,
-        "candados_seguridad_activos": list(ctx.candados_activos),
-    }
+    if es_consulta_ligera(ctx.mensaje_usuario):
+        clima_ligero = None
+        if isinstance(ctx.clima_pronostico, dict):
+            clima_ligero = {
+                "ubicacion": ctx.clima_pronostico.get("ubicacion"),
+                "ahora": ctx.clima_pronostico.get("ahora"),
+                "resumen_24h": ctx.clima_pronostico.get("resumen_24h"),
+            }
+        payload = {
+            "modo": "charla_ligera",
+            "fecha_hora_local": ctx.fecha_hora_local,
+            "regla": (
+                "El usuario está saludando o conversando sin pedir calibración ni cambios. "
+                "Responde en primera persona con cercanía y brevedad; devuelve "
+                "ajustes_propuestos = {} y justificacion_agronomica = ''."
+            ),
+            "consulta_operador": ctx.mensaje_usuario,
+            "historial_hilo_actual": list(ctx.ultimos_turnos),
+            "estacion_actual_resumen": (
+                {
+                    "nombre": resumen_dict["nombre_estacion"],
+                    "severidad": resumen_dict["severidad"],
+                    "alertas": resumen_dict["alertas_detectadas"][:2],
+                }
+                if resumen_dict
+                else None
+            ),
+            "clima_actual_y_pronostico": clima_ligero,
+            "panorama_global_estaciones": list(ctx.panorama_ecosistema),
+        }
+    else:
+        payload = {
+            "modo": "analisis_tecnico",
+            "fecha_hora_local": ctx.fecha_hora_local,
+            "consulta_operador": ctx.mensaje_usuario,
+            "historial_hilo_actual": list(ctx.ultimos_turnos),
+            "version_calibracion_activa": ctx.version_calibracion_actual,
+            "parametros_calibracion_actuales": ctx.parametros_actuales,
+            "pulso_estacion_24h": resumen_dict,
+            "clima_actual_y_pronostico": ctx.clima_pronostico,
+            "parcela_asociada": parcela_dict,
+            "parcelas_vinculadas": list(ctx.parcelas_relacionadas),
+            "ultima_incidencia_riego": incidencia_dict,
+            "candados_seguridad_activos": list(ctx.candados_activos),
+            "panorama_global_estaciones": list(ctx.panorama_ecosistema),
+        }
     return (
-        "Analiza el siguiente contexto operativo de la estación/parcela y responde en JSON:\n"
+        "Analiza el siguiente contexto operativo y responde en JSON válido:\n"
         + json.dumps(payload, ensure_ascii=False, indent=2)
     )

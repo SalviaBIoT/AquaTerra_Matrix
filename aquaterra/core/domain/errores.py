@@ -32,6 +32,15 @@ class ErrorAutenticacion(ErrorDominio):
         super().__init__("Usuario o contraseña incorrectos.")
 
 
+class ErrorSesionExpirada(ErrorDominio):
+    """Token de sesión ausente, revocado o expirado (HTTP 401 sin confundir con clave errónea)."""
+
+    def __init__(self, detalle: str | None = None) -> None:
+        super().__init__(
+            detalle or "Tu sesión ha expirado o no ha sido iniciada. Inicia sesión nuevamente."
+        )
+
+
 class ErrorPermiso(ErrorDominio):
     def __init__(self, accion: str):
         super().__init__(f"No tiene permisos para: {accion}.")

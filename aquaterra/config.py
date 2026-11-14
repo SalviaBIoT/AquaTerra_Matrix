@@ -12,11 +12,17 @@ Variables de entorno soportadas (útiles para despliegue en servidor):
 from __future__ import annotations
 
 import os
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
-# Raíz del repositorio: .../AquaTerra_Matrix
-RAIZ_PROYECTO: Path = Path(__file__).resolve().parent.parent
+# Raíz del repositorio (o carpeta del ejecutable si corre empaquetado con PyInstaller)
+RAIZ_PROYECTO: Path = (
+    Path(sys.executable).resolve().parent
+    if getattr(sys, "frozen", False)
+    else Path(__file__).resolve().parent.parent
+)
+RAIZ_RECURSOS: Path = Path(getattr(sys, "_MEIPASS", RAIZ_PROYECTO))
 PAQUETE: Path = Path(__file__).resolve().parent
 
 

@@ -378,15 +378,30 @@ class ActiveSyncAndGatewayService:
         )
 
     def listar_pronostico_estacion(
-        self, estacion_id: int, *, horas: int = 48
+        self, estacion_id: int, *, horas: int = 48, auto_descargar: bool = False
     ) -> list[PuntoPronosticoClima]:
         """Devuelve el pronóstico horario en caché local (`pronostico_clima_cache`)."""
         ahora_ep = tiempo.a_epoch(tiempo.ahora()) - 3600
-        return self._clima_repo.ventana(
+        puntos = self._clima_repo.ventana(
             estacion_id,
             desde_epoch=ahora_ep,
             hasta_epoch=ahora_ep + max(1, horas) * 3600,
         )
+        if not puntos and auto_descargar:
+            try:
+                estacion = self._estaciones.obtener(estacion_id)
+                _, _, descargados = self.clima.descargar_pronostico_estacion(estacion, dias=3)
+                if descargados:
+                    with self._db:
+                        self._clima_repo.guardar_lote(descargados)
+                    puntos = self._clima_repo.ventana(
+                        estacion_id,
+                        desde_epoch=ahora_ep,
+                        hasta_epoch=ahora_ep + max(1, horas) * 3600,
+                    )
+            except Exception:
+                pass
+        return puntos
 
     def registrar_estacion(
         self,

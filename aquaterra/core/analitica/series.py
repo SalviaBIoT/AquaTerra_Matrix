@@ -22,6 +22,8 @@ from enum import StrEnum
 from aquaterra.core import tiempo
 
 VENTANAS_MOVILES_SEG: dict[str, int] = {
+    "5m": 300,
+    "15m": 900,
     "30m": 1_800,
     "1h": 3_600,
     "6h": 21_600,
@@ -31,7 +33,7 @@ VENTANAS_MOVILES_SEG: dict[str, int] = {
 
 
 def resolver_ventana_seg(ventana: str | int) -> int:
-    """Convierte una etiqueta (``'30m'``, ``'1h'``, ``'6h'``, ``'24h'``, ``'7d'``) o segundos a entero positivo."""
+    """Convierte una etiqueta (``'5m'``, ``'15m'``, ``'30m'``, ``'1h'``, ``'6h'``, ``'24h'``, ``'7d'``) a segundos."""
     if isinstance(ventana, int):
         if ventana <= 0:
             raise ValueError(f"La ventana móvil debe ser > 0 segundos (recibido: {ventana}).")

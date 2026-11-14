@@ -1,24 +1,26 @@
 [build-system]
-requires = ["setuptools>=69"]
+requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "aquaterra-matrix"
-dynamic = ["version"]
-description = "Software Matriz de Administración Ecológica, Agrícola y Bio-IoT del Ecosistema TerraBit"
+version = "6.0.0"
+description = "Software Matriz de Administración Ecológica, Agrícola y Bio-IoT (Ecosistema TerraBit & Conservación)"
 readme = "README.md"
 requires-python = ">=3.11"
-authors = [{ name = "Daniel Felipe Duque Lizarralde" }]
-dependencies = ["matplotlib>=3.9,<4", "ttkbootstrap>=1.10.1,<3", "Pillow>=10.3", "pyserial>=3.5"]
-
-[project.optional-dependencies]
-dev = ["pytest>=8.0", "ruff>=0.6"]
+dependencies = [
+    "fastapi>=0.115,<1",
+    "uvicorn[standard]>=0.30,<1",
+    "pywebview>=5.0,<7",
+    "matplotlib>=3.9,<4",
+    "ttkbootstrap>=1.10.1,<3",
+    "Pillow>=10.3",
+    "pyserial>=3.5",
+]
 
 [project.scripts]
-aquaterra = "aquaterra.ui.app:ejecutar"
-
-[tool.setuptools.dynamic]
-version = { attr = "aquaterra.__version__" }
+aquaterra = "aquaterra.desktop:ejecutar"
+aquaterra-legacy = "aquaterra.ui.app:ejecutar"
 
 [tool.setuptools.packages.find]
 include = ["aquaterra*"]
@@ -29,12 +31,11 @@ include = ["aquaterra*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
-markers = ["gui: pruebas que instancian ventanas Tk (requieren entorno gráfico)"]
 
 [tool.ruff]
 line-length = 120
 target-version = "py311"
-extend-exclude = ["legacy"]
+extend-exclude = ["legacy", "frontend"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "SIM"]

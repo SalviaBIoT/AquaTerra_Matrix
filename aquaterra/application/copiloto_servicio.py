@@ -22,6 +22,7 @@ from pathlib import Path
 
 from aquaterra.application.control_servicio import DecisionAndControlService
 from aquaterra.application.pulso_servicio import NodePulseService
+from aquaterra.core import tiempo
 from aquaterra.core.control.enclavamientos import (
     CAPACIDAD_CAMPO_POR_SUELO,
     LAMINA_MAX_L_M2_POR_SUELO,
@@ -39,15 +40,24 @@ from aquaterra.core.copiloto.cotas_calibracion import (
 from aquaterra.core.domain import (
     EntidadNoEncontrada,
     ErrorValidacion,
+    Estacion,
     InteraccionCopiloto,
     Parcela,
+    PuntoPronosticoClima,
     VersionCalibracion,
+)
+from aquaterra.infrastructure.clima import (
+    LATITUD_UTP_PEREIRA,
+    LONGITUD_UTP_PEREIRA,
+    ClienteOpenMeteo,
 )
 from aquaterra.infrastructure.db.repositorios import (
     RepositorioCalibraciones,
     RepositorioCopiloto,
+    RepositorioEstaciones,
     RepositorioIncidenciaRiego,
     RepositorioParcelas,
+    RepositorioPronosticoClima,
 )
 from aquaterra.infrastructure.ia.proveedores import (
     ConfiguracionIA,
@@ -99,11 +109,107 @@ class CalibrationCopilotService:
         self._db = conexion
         self._calibraciones = RepositorioCalibraciones(conexion)
         self._copiloto_repo = RepositorioCopiloto(conexion)
+        self._estaciones = RepositorioEstaciones(conexion)
         self._incidencias = RepositorioIncidenciaRiego(conexion)
         self._parcelas = RepositorioParcelas(conexion)
+        self._clima_repo = RepositorioPronosticoClima(conexion)
+        self._clima_cliente = ClienteOpenMeteo(timeout_segundos=4.0)
         self._pulso_srv = NodePulseService(conexion)
         self._control_srv = DecisionAndControlService(conexion)
         self.orquestador = OrquestadorIA(config_ia, proveedor_override=proveedor_override)
+
+    def _construir_contexto_climatico(
+        self,
+        estacion_obj: Estacion | None,
+        *,
+        ahora_ep: int,
+        permitir_descarga_viva: bool,
+    ) -> dict[str, object] | None:
+        """Obtiene pronóstico horario de Open-Meteo (caché SQLite o descarga rápida en vivo)."""
+        est_objetivo = estacion_obj
+        if est_objetivo is None:
+            activas = [e for e in self._estaciones.listar() if e.activa]
+            est_objetivo = activas[0] if activas else None
+        if est_objetivo is None:
+            return None
+
+        puntos: list[PuntoPronosticoClima] = self._clima_repo.ventana(
+            est_objetivo.id,
+            desde_epoch=ahora_ep - 3600,
+            hasta_epoch=ahora_ep + 36 * 3600,
+        )
+        origen = "Open-Meteo (caché local SQLite)"
+        if not puntos and permitir_descarga_viva:
+            try:
+                _, _, descargados = self._clima_cliente.descargar_pronostico_estacion(
+                    est_objetivo, dias=3
+                )
+                if descargados:
+                    with self._db:
+                        self._clima_repo.guardar_lote(descargados)
+                    puntos = [
+                        p
+                        for p in descargados
+                        if (ahora_ep - 3600) <= p.ts_objetivo_epoch <= (ahora_ep + 36 * 3600)
+                    ]
+                    origen = "Open-Meteo (descarga directa en tiempo real)"
+            except Exception:
+                puntos = []
+
+        if not puntos:
+            return None
+
+        punto_actual = min(puntos, key=lambda p: abs(p.ts_objetivo_epoch - ahora_ep))
+        proximas_24 = [p for p in puntos if ahora_ep - 1800 <= p.ts_objetivo_epoch <= ahora_ep + 24 * 3600]
+        if not proximas_24:
+            proximas_24 = puntos[:24]
+
+        temps = [p.temp_c for p in proximas_24 if p.temp_c is not None]
+        hums = [p.hum_relativa_pct for p in proximas_24 if p.hum_relativa_pct is not None]
+        vientos = [p.viento_ms for p in proximas_24 if p.viento_ms is not None]
+        probs = [p.lluvia_prob_pct for p in proximas_24 if p.lluvia_prob_pct is not None]
+        lluvia_total = round(sum((p.lluvia_mm or 0.0) for p in proximas_24), 2)
+        et0_total = round(sum((p.et0_mm or 0.0) for p in proximas_24), 2)
+
+        lat = est_objetivo.latitud if est_objetivo.latitud is not None else LATITUD_UTP_PEREIRA
+        lon = est_objetivo.longitud if est_objetivo.longitud is not None else LONGITUD_UTP_PEREIRA
+
+        return {
+            "fuente": origen,
+            "ubicacion": {
+                "estacion": est_objetivo.nombre,
+                "latitud": lat,
+                "longitud": lon,
+            },
+            "ahora": {
+                "hora_iso": punto_actual.ts_objetivo_iso,
+                "temp_c": punto_actual.temp_c,
+                "humedad_relativa_pct": punto_actual.hum_relativa_pct,
+                "lluvia_prob_pct": punto_actual.lluvia_prob_pct,
+                "lluvia_mm": punto_actual.lluvia_mm,
+                "viento_ms": punto_actual.viento_ms,
+                "et0_mm_h": punto_actual.et0_mm,
+            },
+            "resumen_24h": {
+                "temp_min_c": round(min(temps), 1) if temps else None,
+                "temp_max_c": round(max(temps), 1) if temps else None,
+                "humedad_promedio_pct": round(sum(hums) / len(hums), 1) if hums else None,
+                "lluvia_prob_max_pct": round(max(probs), 0) if probs else None,
+                "lluvia_acumulada_24h_mm": lluvia_total,
+                "viento_max_ms": round(max(vientos), 1) if vientos else None,
+                "et0_acumulada_24h_mm": et0_total,
+            },
+            "proximas_horas": [
+                {
+                    "hora_iso": p.ts_objetivo_iso,
+                    "temp_c": p.temp_c,
+                    "hum_pct": p.hum_relativa_pct,
+                    "lluvia_prob_pct": p.lluvia_prob_pct,
+                    "lluvia_mm": p.lluvia_mm,
+                }
+                for p in proximas_24[::3][:8]
+            ],
+        }
 
     def obtener_calibracion_efectiva(
         self,
@@ -186,6 +292,82 @@ class CalibrationCopilotService:
             )
             candados_activos = recomendacion.veredicto_seguridad.motivos_bloqueo
 
+        estacion_obj: Estacion | None = None
+        if estacion_id is not None:
+            try:
+                estacion_obj = self._estaciones.obtener(estacion_id)
+            except EntidadNoEncontrada:
+                estacion_obj = None
+
+        ahora_ref = ahora_epoch if ahora_epoch is not None else tiempo.a_epoch(tiempo.ahora())
+        fecha_hora_local = tiempo.a_iso(tiempo.desde_epoch(ahora_ref))
+
+        panorama_items: list[dict[str, object]] = []
+        try:
+            for est in self._estaciones.listar():
+                if not est.activa:
+                    continue
+                if resumen_pulso is not None and est.id == resumen_pulso.estacion_id:
+                    p_est = resumen_pulso
+                else:
+                    p_est = self._pulso_srv.obtener_pulso_24h(est.id, hasta_epoch=ahora_epoch)
+                ultimas_vars = {
+                    var: round(stat.ultimo_valor, 2)
+                    for var, stat in list(p_est.variables.items())[:5]
+                }
+                panorama_items.append(
+                    {
+                        "estacion_id": est.id,
+                        "codigo": est.codigo,
+                        "nombre": est.nombre,
+                        "tipo": est.tipo.value,
+                        "severidad": p_est.severidad.value,
+                        "alertas": list(p_est.alertas_detectadas[:3]),
+                        "ultimas_variables": ultimas_vars,
+                    }
+                )
+        except Exception:
+            panorama_items = []
+
+        parcelas_rel: list[dict[str, object]] = []
+        try:
+            for p_item in self._parcelas.listar():
+                if not p_item.activa:
+                    continue
+                if estacion_id is None or p_item.estacion_id in (estacion_id, None):
+                    parcelas_rel.append(
+                        {
+                            "id": p_item.id,
+                            "nombre": p_item.nombre,
+                            "cultivo": p_item.cultivo,
+                            "tipo_suelo": p_item.tipo_suelo.value,
+                            "humedad_pct": round(p_item.humedad_pct, 1),
+                        }
+                    )
+        except Exception:
+            parcelas_rel = []
+
+        clima_pronostico = self._construir_contexto_climatico(
+            estacion_obj,
+            ahora_ep=ahora_ref,
+            permitir_descarga_viva=(
+                ahora_epoch is None and self.orquestador._override is None
+            ),
+        )
+
+        previos = self._copiloto_repo.listar(
+            estacion_id=estacion_id,
+            parcela_id=parcela_id,
+            solo_sin_estacion=(estacion_id is None),
+        )
+        ultimos_turnos = tuple(
+            {
+                "usuario": item.mensaje_usuario,
+                "mandarino": item.diagnostico_ia[:450],
+            }
+            for item in previos[-5:]
+        )
+
         ctx = ContextoDiagnosticoCopiloto(
             mensaje_usuario=mensaje_limpio,
             parametros_actuales=parametros_actuales,
@@ -194,6 +376,11 @@ class CalibrationCopilotService:
             parcela=parcela,
             ultima_incidencia_riego=ultima_incidencia,
             candados_activos=candados_activos,
+            panorama_ecosistema=tuple(panorama_items),
+            ultimos_turnos=ultimos_turnos,
+            clima_pronostico=clima_pronostico,
+            fecha_hora_local=fecha_hora_local,
+            parcelas_relacionadas=tuple(parcelas_rel[:8]),
         )
 
         propuesta, auditoria = self.orquestador.diagnosticar_con_auditoria(ctx)
@@ -214,12 +401,15 @@ class CalibrationCopilotService:
                     autor_id=usuario_id,
                 )
 
+            texto_guardado = (
+                f"{propuesta.diagnostico_tecnico}\n\n"
+                f"Justificación: {propuesta.justificacion_agronomica}"
+                if propuesta.justificacion_agronomica.strip()
+                else propuesta.diagnostico_tecnico
+            )
             interaccion = self._copiloto_repo.registrar(
                 mensaje_usuario=mensaje_limpio,
-                diagnostico_ia=(
-                    f"{propuesta.diagnostico_tecnico}\n\n"
-                    f"Justificación: {propuesta.justificacion_agronomica}"
-                ),
+                diagnostico_ia=texto_guardado,
                 proveedor_ia=propuesta.proveedor_ia,
                 estacion_id=estacion_id,
                 parcela_id=parcela_id,
@@ -314,8 +504,13 @@ class CalibrationCopilotService:
         *,
         estacion_id: int | None = None,
         parcela_id: int | None = None,
+        solo_sin_estacion: bool = False,
     ) -> list[InteraccionCopiloto]:
-        return self._copiloto_repo.listar(estacion_id=estacion_id, parcela_id=parcela_id)
+        return self._copiloto_repo.listar(
+            estacion_id=estacion_id,
+            parcela_id=parcela_id,
+            solo_sin_estacion=solo_sin_estacion,
+        )
 
     def exportar_dataset_entrenamiento_jsonl(
         self,
@@ -369,48 +564,134 @@ class CalibrationCopilotService:
 
         return exportadas
 
+    @staticmethod
+    def _etiquetar_variable_reporte(clave: str) -> str:
+        mapa = {
+            "suelo_a": "Humedad Suelo A",
+            "suelo_b": "Humedad Suelo B",
+            "humedad_suelo_pct": "Humedad de Suelo",
+            "hum_aire": "Humedad Relativa",
+            "humedad_rel_pct": "Humedad Relativa",
+            "temp_aire": "Temperatura Aire",
+            "temp_c": "Temperatura Aire",
+            "temp_raiz": "Temperatura Radicular",
+            "temp_suelo_c": "Temperatura Suelo",
+            "presion": "Presión Atmosférica",
+            "vpd": "VPD",
+            "vpd_kpa": "VPD",
+            "voltaje": "Voltaje Nodo",
+            "bateria_v": "Batería",
+            "bateria_pct": "Batería",
+            "radiacion_wm2": "Radiación Solar",
+            "mojado_foliar_pct": "Mojado Foliar",
+            "nivel_agua_cm": "Nivel Freático",
+            "caudal_l_min": "Caudal",
+            "lluvia_mm": "Precipitación",
+        }
+        return mapa.get(clave, clave.replace("_", " ").capitalize())
+
+    @staticmethod
+    def _etiquetar_proveedor_ia(proveedor_id: str) -> str:
+        mapa = {
+            "local_reglas": "Motor Determinista Local",
+            "gemini": "Google Gemini AI",
+            "ollama": "Ollama Local",
+        }
+        for k, etiqueta in mapa.items():
+            if proveedor_id.startswith(k):
+                return etiqueta
+        return proveedor_id.replace("_", " ").capitalize()
+
+    @staticmethod
+    def _limpiar_sintaxis_cruda(texto: str) -> str:
+        return texto.replace("`", "").strip()
+
+    def generar_reporte_pulso_24h(
+        self,
+        estacion_id: int,
+        *,
+        hasta_epoch: int | None = None,
+    ) -> dict[str, object]:
+        """Genera un informe ejecutivo 24h en formato texto limpio y estructura JSON."""
+        pulso = self._pulso_srv.obtener_pulso_24h(estacion_id, hasta_epoch=hasta_epoch)
+        _, params = self.obtener_calibracion_efectiva(estacion_id=estacion_id)
+        ctx = ContextoDiagnosticoCopiloto(
+            mensaje_usuario=(
+                "Redacta un resumen ejecutivo claro, conciso y estructurado de las últimas "
+                "24 horas de operación para ingeniería agronómica."
+            ),
+            parametros_actuales=params,
+            resumen_pulso=pulso,
+        )
+        propuesta, _ = self.orquestador.diagnosticar_con_auditoria(ctx)
+        proveedor_legible = self._etiquetar_proveedor_ia(propuesta.proveedor_ia)
+
+        lecturas = [
+            {
+                "clave": k,
+                "nombre": self._etiquetar_variable_reporte(k),
+                "valor": round(float(v.ultimo_valor), 2),
+                "unidad": v.unidad or "",
+            }
+            for k, v in list(pulso.variables.items())[:8]
+        ]
+        lineas_lecturas = (
+            "\n".join(
+                f"  - {item['nombre']}: {item['valor']:.1f}"
+                f"{(' ' + item['unidad']) if item['unidad'] else ''}"
+                for item in lecturas
+            )
+            if lecturas
+            else "  - Sin lecturas registradas en las últimas 24 horas."
+        )
+        alertas = list(pulso.alertas_detectadas)
+        lineas_alertas = (
+            "\n".join(f"  - {a}" for a in alertas)
+            if alertas
+            else "  - Sin alertas críticas activas."
+        )
+        diagnostico_limpio = self._limpiar_sintaxis_cruda(propuesta.diagnostico_tecnico)
+        justificacion_limpia = self._limpiar_sintaxis_cruda(propuesta.justificacion_agronomica)
+
+        mensaje = (
+            f"REPORTE EJECUTIVO 24H — {pulso.nombre_estacion} ({pulso.codigo_estacion})\n"
+            f"Estado: {pulso.severidad.value.upper()} | "
+            f"Completitud 24h: {pulso.completitud_global_pct:.0f}% | "
+            f"Motor: {proveedor_legible}\n\n"
+            f"TELEMETRÍA RECIENTE\n{lineas_lecturas}\n\n"
+            f"ALERTAS ACTIVAS\n{lineas_alertas}\n\n"
+            f"DIAGNÓSTICO TÉCNICO\n{diagnostico_limpio}\n\n"
+            f"RECOMENDACIÓN AGRONÓMICA\n{justificacion_limpia}"
+        )
+        return {
+            "mensaje": mensaje,
+            "proveedor_ia": propuesta.proveedor_ia,
+            "reporte": {
+                "estacion": pulso.nombre_estacion,
+                "codigo": pulso.codigo_estacion,
+                "severidad": pulso.severidad.value,
+                "completitud_pct": round(float(pulso.completitud_global_pct), 1),
+                "proveedor_ia": propuesta.proveedor_ia,
+                "proveedor_legible": proveedor_legible,
+                "lecturas": lecturas,
+                "alertas": alertas,
+                "diagnostico": diagnostico_limpio,
+                "justificacion": justificacion_limpia,
+            },
+        }
+
     def narrar_pulso_24h(
         self,
         estacion_id: int,
         *,
         hasta_epoch: int | None = None,
     ) -> tuple[str, str]:
-        """Genera un reporte ejecutivo 24h listo para WhatsApp / Telegram / n8n.
+        """Genera un reporte ejecutivo 24h listo para UI, WhatsApp, Telegram o n8n.
 
         Devuelve `(mensaje_formateado, proveedor_ia)`.
         """
-        pulso = self._pulso_srv.obtener_pulso_24h(estacion_id, hasta_epoch=hasta_epoch)
-        _, params = self.obtener_calibracion_efectiva(estacion_id=estacion_id)
-        ctx = ContextoDiagnosticoCopiloto(
-            mensaje_usuario=(
-                "Redacta un resumen ejecutivo de estado de las últimas 24 horas para "
-                "enviar por WhatsApp/Telegram al director o productor."
-            ),
-            parametros_actuales=params,
-            resumen_pulso=pulso,
-        )
-        propuesta, _ = self.orquestador.diagnosticar_con_auditoria(ctx)
-
-        variables_resumen = ", ".join(
-            f"{k}={v.ultimo_valor:.1f}{v.unidad or ''}"
-            for k, v in list(pulso.variables.items())[:6]
-        )
-        alertas_txt = (
-            " | ".join(pulso.alertas_detectadas)
-            if pulso.alertas_detectadas
-            else "Sin alertas críticas"
-        )
-        mensaje = (
-            f"🌱 *AquaTerra Matrix — Pulso 24h*\n"
-            f"📡 Estación: *{pulso.nombre_estacion}* (`{pulso.codigo_estacion}`)\n"
-            f"🚦 Estado: *{pulso.severidad.value.upper()}* (Completitud: {pulso.completitud_global_pct:.0f}%)\n"
-            f"📊 Últimas lecturas: {variables_resumen or 'Sin lecturas en ventana'}\n"
-            f"⚠️ Alertas: {alertas_txt}\n\n"
-            f"🧠 *Análisis ({propuesta.proveedor_ia}):*\n"
-            f"{propuesta.diagnostico_tecnico}\n"
-            f"💡 {propuesta.justificacion_agronomica}"
-        )
-        return mensaje, propuesta.proveedor_ia
+        res = self.generar_reporte_pulso_24h(estacion_id, hasta_epoch=hasta_epoch)
+        return str(res["mensaje"]), str(res["proveedor_ia"])
 
     def buscar_inteligente_bitacora(
         self,

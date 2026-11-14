@@ -626,6 +626,14 @@ class RepositorioCalibraciones:
         ).fetchall()
         return [self._a_entidad(f) for f in filas]
 
+    def listar_recientes_globales(self, limite: int = 12) -> list[VersionCalibracion]:
+        filas = self._db.execute(
+            """SELECT * FROM calibraciones_nodo
+               ORDER BY id DESC LIMIT ?""",
+            (limite,),
+        ).fetchall()
+        return [self._a_entidad(f) for f in filas]
+
     def restaurar_version(
         self,
         version_id: int,
@@ -1006,8 +1014,14 @@ class RepositorioCopiloto:
         *,
         estacion_id: int | None = None,
         parcela_id: int | None = None,
+        solo_sin_estacion: bool = False,
     ) -> list[InteraccionCopiloto]:
-        if estacion_id is not None and parcela_id is not None:
+        if solo_sin_estacion and estacion_id is None:
+            filas = self._db.execute(
+                """SELECT * FROM conversaciones_copiloto
+                   WHERE estacion_id IS NULL ORDER BY id ASC"""
+            ).fetchall()
+        elif estacion_id is not None and parcela_id is not None:
             filas = self._db.execute(
                 """SELECT * FROM conversaciones_copiloto
                    WHERE estacion_id = ? AND parcela_id = ?
