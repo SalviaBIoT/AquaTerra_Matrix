@@ -2,7 +2,7 @@
 
 **Ecosistema:** TerraBit Agrotech & Conservación (Semilleros Kilby & MUCEM — Universidad Tecnológica de Pereira)  
 **Autor y Arquitecto de Software:** Daniel Felipe Duque Lizarralde  
-**Versión Actual:** `v4.1.0a1` (Fase B1: Esquema SQLite v2 + Repositorios de Control/Calibración + Ingesta Universal 4 Familias)  
+**Versión Actual:** `v4.1.0a2` (Fase B2: Motor Analítico + Ventana Móvil SQLite + Pulso 24h por Familia)  
 
 ---
 
@@ -25,6 +25,7 @@ AquaTerra_Matrix/
 │   ├── core/                         # Dominio puro y ciencia agronómica (Cero I/O)
 │   │   ├── domain/                   # Entidades inmutables, validadores y errores
 │   │   ├── agronomia/                # Psicrometría (VPD Tetens FAO-56) y balance hídrico
+│   │   ├── analitica/                # Ventanas móviles, secado OLS, Pearson r, viento circular y Pulso 24h
 │   │   └── tiempo.py                 # Estandarización ISO-8601 (UTC-05:00) + Unix Epoch
 │   ├── application/                  # Casos de uso, permisos, transacciones y contenedor DI
 │   ├── infrastructure/               # Adaptadores técnicos
@@ -36,12 +37,12 @@ AquaTerra_Matrix/
 ├── DEVELOP/                          # Centro de Trazabilidad (Reportes, ADRs y Propuestas)
 │   ├── README.md                     # Índice maestro y matriz de deuda técnica
 │   ├── ARQUITECTURA_MAESTRA_BRUJULA.md # Brújula Maestra v4.0 -> v5.0 (Fases B1..B5 + UI)
-│   ├── reportes/                     # REP-000, REP-001, REP-002...
+│   ├── reportes/                     # REP-000, REP-001, REP-002, REP-003...
 │   ├── decisiones/                   # ADR-001 a ADR-004
 │   ├── propuestas/                   # PRP-001 (Antena/Ubidots), PRP-002 (Modelo Hídrico CC/PMP)
 │   └── plantillas/                   # Plantillas estandarizadas de ingeniería
 ├── scripts/                          # Utilidades CLI (migrar_legacy_v32.py)
-├── tests/                            # Suite de 57 pruebas automatizadas (pytest)
+├── tests/                            # Suite de 64 pruebas automatizadas (pytest)
 ├── legacy/aquautp_v3.2/              # Respaldo histórico inmutable de la semilla v3.2
 ├── docs/                             # Documentación de telemetría y manuales originales
 ├── main.py                           # Punto de entrada (también ejecutable con python -m aquaterra)
@@ -80,7 +81,8 @@ ruff check .
 | **v3.2.0** | `Legacy Seed` | Congelación de respaldo histórico (`legacy/aquautp_v3.2` y tag `v3.2.0-legacy`), entorno `.venv` y autoría unificada. | ✅ **Completado ([REP-000](DEVELOP/reportes/REP-000_migracion_semilla_y_entorno.md))** |
 | **v4.0.0a1** | `Core SQLite & Clean Arch` | Re-arquitectura en 4 capas (`aquaterra/`), cierre total de deuda técnica (`DT-01` a `DT-05`), SQLite3 WAL, PBKDF2-SHA256, $VPD$ Tetens, adaptadores IoT base, carpeta `DEVELOP/` y 47 tests en verde. | ✅ **Completado ([REP-001](DEVELOP/reportes/REP-001_arquitectura_v4_y_resolucion_deuda_tecnica.md))** |
 | **v4.1.0a1** | `Fase B1 · Esquema v2 e Ingesta Universal` | Migración SQLite `v2` (7 tablas de eventos, calibración con *rollback*, actuadores, riegos programados, clima y copiloto), parsers de Sigatoka (`MUNDONUEVO.csv`/`buffer_sigatoka.json`), Conservación/Páramos, guardia RTC y 57 tests en verde. | ✅ **Completado ([REP-002](DEVELOP/reportes/REP-002_fase_b1_esquema_v2_e_ingesta_universal.md))** |
-| **v4.1.0** | `Fases B2..B5 · Backend Completo` | Motor analítico (`core/analitica/`), enclavamientos de seguridad (`SafetyInterlockEngine`), diagnóstico por vibración, exportador `.xlsx`, radar de nodos y copiloto híbrido. | 🚧 **Siguiente ([Brújula B2→B5](DEVELOP/ARQUITECTURA_MAESTRA_BRUJULA.md))** |
+| **v4.1.0a2** | `Fase B2 · Motor Analítico y Pulso 24h` | Paquete `aquaterra/core/analitica/` (ventana móvil, tasa de secado OLS, correlación de Pearson $r$, rumbo vectorial circular y Pulso 24h de las 4 familias), Window Functions SQLite3, `NodePulseService` y 64 tests en verde. | ✅ **Completado ([REP-003](DEVELOP/reportes/REP-003_fase_b2_motor_analitico_ventana_movil_y_pulso_24h.md))** |
+| **v4.1.0** | `Fases B3..B5 · Backend Completo` | Enclavamientos de seguridad (`SafetyInterlockEngine`), diagnóstico por vibración de bomba, incidencia post-riego, exportador `.xlsx`, radar de nodos y copiloto híbrido. | 🚧 **Siguiente ([Brújula B3→B5](DEVELOP/ARQUITECTURA_MAESTRA_BRUJULA.md))** |
 | **v5.0.0** | `Matrix Telemetry Hub & UI 5 Pestañas` | Nueva interfaz de 5 módulos, recepción local por antena (**Gateway LoRa 915 MHz / ESP-NOW LR / Broker Mosquitto local**), puente `Store & Forward` a Ubidots y modelo físico CC/PMP. | 📋 **Planificado ([PRP-001](DEVELOP/propuestas/PRP-001_ingesta_antena_lora_mqtt_y_ubidots.md) · [PRP-002](DEVELOP/propuestas/PRP-002_modelo_agronomico_riego_vpd_y_suelo.md))** |
 
 ---

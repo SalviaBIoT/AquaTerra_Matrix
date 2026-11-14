@@ -16,6 +16,7 @@ from collections.abc import Iterable
 from typing import Any
 
 from aquaterra.core import tiempo
+from aquaterra.core.analitica.series import PuntoVentanaMovil, resolver_ventana_seg
 from aquaterra.core.domain import (
     DatosParcela,
     DiagnosticoMecanicoBomba,
@@ -285,10 +286,84 @@ class RepositorioLecturas:
         ).fetchall()
         return [(f[0], f[1]) for f in filas]
 
+    def serie_rango(
+        self,
+        estacion_id: int,
+        variable: str,
+        *,
+        desde_epoch: int,
+        hasta_epoch: int,
+    ) -> list[tuple[int, float]]:
+        filas = self._db.execute(
+            """SELECT ts_epoch, valor FROM lecturas_sensor
+               WHERE estacion_id = ? AND variable = ? AND ts_epoch BETWEEN ? AND ? AND calidad < 2
+               ORDER BY ts_epoch ASC""",
+            (estacion_id, variable, desde_epoch, hasta_epoch),
+        ).fetchall()
+        return [(int(f[0]), float(f[1])) for f in filas]
+
+    def series_estacion_rango(
+        self,
+        estacion_id: int,
+        *,
+        desde_epoch: int,
+        hasta_epoch: int,
+    ) -> tuple[dict[str, list[tuple[int, float]]], dict[str, str | None]]:
+        """Recupera en una sola pasada todas las series válidas y sus unidades en ``[desde_epoch, hasta_epoch]``."""
+        filas = self._db.execute(
+            """SELECT variable, ts_epoch, valor, unidad FROM lecturas_sensor
+               WHERE estacion_id = ? AND ts_epoch BETWEEN ? AND ? AND calidad < 2
+               ORDER BY variable ASC, ts_epoch ASC""",
+            (estacion_id, desde_epoch, hasta_epoch),
+        ).fetchall()
+        series: dict[str, list[tuple[int, float]]] = {}
+        unidades: dict[str, str | None] = {}
+        for fila in filas:
+            var = str(fila["variable"])
+            series.setdefault(var, []).append((int(fila["ts_epoch"]), float(fila["valor"])))
+            if var not in unidades or unidades[var] is None:
+                unidades[var] = fila["unidad"]
+        return series, unidades
+
+    def serie_ventana_movil(
+        self,
+        estacion_id: int,
+        variable: str,
+        *,
+        desde_epoch: int,
+        hasta_epoch: int,
+        ventana: str | int = "1h",
+    ) -> list[PuntoVentanaMovil]:
+        """Calcula media, mínimo y máximo móvil directamente en el motor C de SQLite3 (Riesgo 5)."""
+        ventana_seg = resolver_ventana_seg(ventana)
+        filas = self._db.execute(
+            """SELECT ts_epoch, ts_iso, valor,
+                      AVG(valor) OVER w AS media_movil,
+                      MIN(valor) OVER w AS min_movil,
+                      MAX(valor) OVER w AS max_movil
+               FROM lecturas_sensor
+               WHERE estacion_id = ? AND variable = ? AND ts_epoch BETWEEN ? AND ? AND calidad < 2
+               WINDOW w AS (ORDER BY ts_epoch RANGE BETWEEN ? PRECEDING AND CURRENT ROW)
+               ORDER BY ts_epoch ASC""",
+            (estacion_id, variable, desde_epoch, hasta_epoch, ventana_seg),
+        ).fetchall()
+        return [
+            PuntoVentanaMovil(
+                ts_epoch=int(f["ts_epoch"]),
+                ts_iso=str(f["ts_iso"]),
+                valor=round(float(f["valor"]), 4),
+                media_movil=round(float(f["media_movil"]), 4),
+                min_movil=round(float(f["min_movil"]), 4),
+                max_movil=round(float(f["max_movil"]), 4),
+            )
+            for f in filas
+        ]
+
     def ultimo_epoch(self, estacion_id: int) -> int | None:
         """Marca de agua para sincronización incremental (p. ej. pull desde Ubidots)."""
         fila = self._db.execute(
-            "SELECT MAX(ts_epoch) FROM lecturas_sensor WHERE estacion_id = ?", (estacion_id,)
+            "SELECT MAX(ts_epoch) FROM lecturas_sensor WHERE estacion_id = ? AND calidad < 2",
+            (estacion_id,),
         ).fetchone()
         return fila[0]
 
@@ -370,20 +445,22 @@ class RepositorioEventosEstacion:
         *,
         tipo_evento: str | None = None,
         desde_epoch: int = 0,
+        hasta_epoch: int | None = None,
     ) -> list[EventoEstacion]:
+        techo = hasta_epoch if hasta_epoch is not None else 9_999_999_999
         if tipo_evento is not None:
             filas = self._db.execute(
                 """SELECT * FROM eventos_estacion
-                   WHERE estacion_id = ? AND tipo_evento = ? AND ts_epoch >= ?
+                   WHERE estacion_id = ? AND tipo_evento = ? AND ts_epoch BETWEEN ? AND ?
                    ORDER BY ts_epoch, id""",
-                (estacion_id, tipo_evento, desde_epoch),
+                (estacion_id, tipo_evento, desde_epoch, techo),
             ).fetchall()
         else:
             filas = self._db.execute(
                 """SELECT * FROM eventos_estacion
-                   WHERE estacion_id = ? AND ts_epoch >= ?
+                   WHERE estacion_id = ? AND ts_epoch BETWEEN ? AND ?
                    ORDER BY ts_epoch, id""",
-                (estacion_id, desde_epoch),
+                (estacion_id, desde_epoch, techo),
             ).fetchall()
         return [self._a_entidad(f) for f in filas]
 
