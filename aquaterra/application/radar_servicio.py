@@ -222,6 +222,9 @@ class StationDiscoveryService:
             with self._db:
                 lecturas_nuevas = self._lecturas.insertar_lote(lecturas)
 
+        if lecturas_nuevas > 0:
+            self.sincronizar_humedad_parcelas(estacion.id)
+
         return ResultadoImportacionEstacion(
             estacion_id=estacion.id,
             tipo_estacion=estacion.tipo,
@@ -229,3 +232,19 @@ class StationDiscoveryService:
             eventos_nuevos=eventos_nuevos,
             archivo_origen=ruta,
         )
+
+    def sincronizar_humedad_parcelas(self, estacion_id: int) -> int:
+        """Sincroniza `parcelas.humedad_pct` con la última lectura válida de `suelo_a` de la estación."""
+        serie_suelo = self._lecturas.serie(estacion_id, "suelo_a")
+        if not serie_suelo:
+            return 0
+        ultima_humedad = round(float(serie_suelo[-1][1]), 1)
+        parcelas_vinculadas = [
+            p for p in self._parcelas.listar(solo_activas=True) if p.estacion_id == estacion_id
+        ]
+        if not parcelas_vinculadas:
+            return 0
+        with self._db:
+            for p in parcelas_vinculadas:
+                self._parcelas.actualizar_humedad(p.id, ultima_humedad)
+        return len(parcelas_vinculadas)

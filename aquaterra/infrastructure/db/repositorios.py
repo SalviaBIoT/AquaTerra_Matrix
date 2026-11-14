@@ -367,6 +367,52 @@ class RepositorioLecturas:
         ).fetchone()
         return fila[0]
 
+    def reparar_timestamps_rtc(
+        self,
+        estacion_id: int,
+        *,
+        ts_fin_real_epoch: int,
+        epoch_corte: int = 1_704_067_200,
+    ) -> int:
+        """Re-ancla lecturas con reloj RTC desconfigurado (`calidad = 2`, `ts_epoch < epoch_corte`).
+
+        Desplaza en bloque todas las muestras corruptas de la estación para que la
+        última coincida con `ts_fin_real_epoch` (momento conocido de recolección en
+        campo) y las promueve a `calidad = 1` (reconstruida), haciéndolas visibles en
+        las gráficas y ventanas móviles.
+        """
+        fila_max = self._db.execute(
+            """SELECT MAX(ts_epoch) FROM lecturas_sensor
+               WHERE estacion_id = ? AND calidad = 2 AND ts_epoch < ?""",
+            (estacion_id, epoch_corte),
+        ).fetchone()
+        if fila_max is None or fila_max[0] is None:
+            return 0
+
+        max_corrupto = int(fila_max[0])
+        delta_seg = int(ts_fin_real_epoch) - max_corrupto
+        if delta_seg <= 0:
+            return 0
+
+        filas = self._db.execute(
+            """SELECT id, ts_epoch FROM lecturas_sensor
+               WHERE estacion_id = ? AND calidad = 2 AND ts_epoch < ?""",
+            (estacion_id, epoch_corte),
+        ).fetchall()
+
+        actualizadas = 0
+        for f in filas:
+            nuevo_epoch = int(f["ts_epoch"]) + delta_seg
+            nuevo_iso = tiempo.a_iso(tiempo.desde_epoch(nuevo_epoch))
+            self._db.execute(
+                """UPDATE OR IGNORE lecturas_sensor
+                   SET ts_epoch = ?, ts_iso = ?, calidad = 1
+                   WHERE id = ?""",
+                (nuevo_epoch, nuevo_iso, int(f["id"])),
+            )
+            actualizadas += 1
+        return actualizadas
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Auditoría (trazabilidad de quién hizo qué y cuándo)
