@@ -22,6 +22,7 @@ from aquaterra.application.servicios import (
     ServicioParcelas,
     ServicioRiego,
 )
+from aquaterra.application.sincronizacion_servicio import ActiveSyncAndGatewayService
 from aquaterra.config import Configuracion, configuracion_por_defecto
 from aquaterra.infrastructure.db import abrir_conexion, aplicar_migraciones
 from aquaterra.infrastructure.db.repositorios import RepositorioUsuarios
@@ -43,6 +44,7 @@ class Contenedor:
     radar: StationDiscoveryService = field(init=False)
     exportacion: AnalyticsAndExportService = field(init=False)
     copiloto: CalibrationCopilotService = field(init=False)
+    sincronizacion: ActiveSyncAndGatewayService = field(init=False)
 
     def __post_init__(self) -> None:
         self.auth = ServicioAutenticacion(self.conexion)
@@ -54,9 +56,13 @@ class Contenedor:
         self.radar = StationDiscoveryService(self.conexion)
         self.exportacion = AnalyticsAndExportService(self.conexion)
         self.copiloto = CalibrationCopilotService(self.conexion)
+        self.sincronizacion = ActiveSyncAndGatewayService(
+            self.conexion, ruta_db=self.config.ruta_db
+        )
 
     def cerrar(self) -> None:
         try:
+            self.sincronizacion.detener_worker_segundo_plano()
             # Consolida el WAL en el archivo principal al salir (copias de seguridad limpias).
             self.conexion.execute("PRAGMA wal_checkpoint(TRUNCATE);")
         finally:

@@ -14,6 +14,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import threading
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field, replace
@@ -258,6 +259,31 @@ class ClienteOllamaLocal:
         except Exception:
             return False
 
+    def precalentar(self, *, keep_alive: str = "10m") -> bool:
+        """Pre-carga el modelo en la VRAM de la GPU sin generar tokens para eliminar la latencia en frío."""
+        if not self.esta_disponible():
+            return False
+        url = f"{self._base_url}/api/generate"
+        cuerpo = json.dumps(
+            {
+                "model": self._modelo,
+                "prompt": "",
+                "keep_alive": keep_alive,
+                "stream": False,
+            }
+        ).encode("utf-8")
+        try:
+            req = urllib.request.Request(
+                url,
+                data=cuerpo,
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=self._timeout) as resp:
+                return resp.status == 200
+        except Exception:
+            return False
+
     def diagnosticar(self, ctx: ContextoDiagnosticoCopiloto) -> PropuestaCopiloto:
         url = f"{self._base_url}/api/chat"
         cuerpo = json.dumps(
@@ -370,3 +396,19 @@ class OrquestadorIA:
 
         # 3. Respaldo determinista nativo (siempre disponible 100% offline)
         return self._asesor_reglas.diagnosticar(ctx)
+
+    def precalentar_ollama_async(self, *, keep_alive: str = "10m") -> threading.Thread:
+        """Lanza un hilo daemon no bloqueante que sube el modelo de Ollama a VRAM en segundo plano."""
+        cliente_ollama = ClienteOllamaLocal(
+            base_url=self.config.ollama_base_url,
+            modelo=self.config.ollama_modelo,
+            timeout_segundos=self.config.ollama_timeout_segundos,
+        )
+        hilo = threading.Thread(
+            target=cliente_ollama.precalentar,
+            kwargs={"keep_alive": keep_alive},
+            name="AquaTerra-OllamaWarmup",
+            daemon=True,
+        )
+        hilo.start()
+        return hilo
