@@ -49,6 +49,16 @@ class DespachadorNotificaciones:
         ).strip()
         self._timeout = timeout_segundos
 
+    @property
+    def canales_configurados(self) -> tuple[str, ...]:
+        """Canales con credenciales completas (para las píldoras de estado de la consola v5.0)."""
+        canales: list[str] = []
+        if self._webhook_url:
+            canales.append("n8n_webhook")
+        if self._tg_token and self._tg_chat_id:
+            canales.append("telegram")
+        return tuple(canales)
+
     def enviar_webhook_n8n(
         self,
         *,

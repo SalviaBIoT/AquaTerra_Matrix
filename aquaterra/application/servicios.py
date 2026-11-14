@@ -26,6 +26,7 @@ from aquaterra.core.domain import (
     EventoRiego,
     OrigenRiego,
     Parcela,
+    Rol,
     Usuario,
 )
 from aquaterra.core.domain.validadores import (
@@ -70,6 +71,53 @@ class ServicioAutenticacion:
             self._auditoria.registrar("login", "usuario", cuenta.id, cuenta.id)
         log.info("Sesión iniciada: %s (%s)", cuenta.usuario, cuenta.rol)
         return cuenta
+
+    def listar_usuarios(self) -> list[Usuario]:
+        """Lista las cuentas registradas (sin exponer hashes) para la consola v5.0."""
+        return self._usuarios.listar()
+
+    def crear_usuario(
+        self,
+        actor: Usuario,
+        *,
+        usuario: str,
+        nombre: str,
+        clave: str,
+        rol: Rol = Rol.OPERADOR,
+    ) -> Usuario:
+        """Crea un nuevo usuario validando permisos de administrador y longitud mínima."""
+        _exigir_admin(actor, "crear usuarios")
+        login_limpio = (usuario or "").strip()
+        nombre_limpio = (nombre or "").strip()
+        errores: list[str] = []
+        if len(login_limpio) < 3:
+            errores.append("El nombre de usuario debe tener al menos 3 caracteres.")
+        if len(nombre_limpio) < 2:
+            errores.append("El nombre completo debe tener al menos 2 caracteres.")
+        if len(clave or "") < 4:
+            errores.append("La contraseña debe tener al menos 4 caracteres.")
+        if self._usuarios.existe(login_limpio):
+            errores.append(f"El usuario '{login_limpio}' ya existe.")
+        if errores:
+            raise ErrorValidacion(errores)
+
+        with self._db:
+            nuevo = self._usuarios.crear(login_limpio, generar_hash(clave), rol, nombre_limpio)
+            self._auditoria.registrar(
+                "crear_usuario", "usuario", nuevo.id, actor.id, {"usuario": nuevo.usuario, "rol": rol.value}
+            )
+        return nuevo
+
+    def cambiar_clave(self, actor: Usuario, *, usuario_id: int, nueva_clave: str) -> None:
+        """Permite al administrador o al propio titular actualizar su contraseña PBKDF2."""
+        if not actor.es_admin and actor.id != usuario_id:
+            raise ErrorPermiso("cambiar la contraseña de otro usuario")
+        if len(nueva_clave or "") < 4:
+            raise ErrorValidacion("La nueva contraseña debe tener al menos 4 caracteres.")
+        with self._db:
+            self._usuarios.obtener(usuario_id)
+            self._usuarios.actualizar_hash(usuario_id, generar_hash(nueva_clave))
+            self._auditoria.registrar("cambiar_clave", "usuario", usuario_id, actor.id)
 
 
 # ──────────────────────────────────────────────────────────────────────────────

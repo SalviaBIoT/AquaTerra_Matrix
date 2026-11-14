@@ -15,6 +15,7 @@ Esta carpeta (`DEVELOP/`) es la **bitácora viva de arquitectura, mejoras, decis
 DEVELOP/
 ├── README.md                                                    # Este índice maestro de trazabilidad
 ├── ARQUITECTURA_MAESTRA_BRUJULA.md                              # Brújula Maestra v4.0 -> v5.0 (Variables, Riesgos y Backend)
+├── ARQUITECTURA_FRONTEND_V5_MAESTRA.md                          # Documento Maestro Frontend v5.0 (App Shell Híbrido y 7 Vistas)
 ├── GUIA_INTEGRACION_IA_AISTUDIO_Y_OLLAMA.md                     # Manual 0 a 100 para conectar Gemini AI Studio y Ollama Local
 ├── reportes/                                                    # Reportes paso a paso de cada fase ejecutada
 │   ├── REP-000_migracion_semilla_y_entorno.md                   # Fase 0: Semilla v3.2, Git, .venv y diagnóstico
@@ -24,7 +25,8 @@ DEVELOP/
 │   ├── REP-004_fase_b3_enclavamientos_salud_bomba_e_incidencia_riego.md # Fase B3: 5 candados, salud bomba e incidencia riego
 │   ├── REP-005_fase_b4_exportador_xlsx_y_radar_estaciones.md    # Fase B4: Exportador .xlsx multi-hoja y Radar de Nodos
 │   ├── REP-006_fase_b5_orquestador_ia_y_copiloto_calibracion.md # Fase B5: Orquestador IA híbrido, Copiloto, Rollback y RTC
-│   └── REP-007_sprint_v42_conectores_activos_ubidots_clima_nrf24_y_notificaciones.md # Sprint v4.2: Ubidots, Open-Meteo, nRF24L01+ y Notificaciones
+│   ├── REP-007_sprint_v42_conectores_activos_ubidots_clima_nrf24_y_notificaciones.md # Sprint v4.2: Ubidots, Open-Meteo, nRF24L01+ y Notificaciones
+│   └── REP-008_frontend_v50_app_shell_hibrido_y_consolidacion.md # Sprint v5.0: Frontend App Shell Híbrido, 7 Vistas y Consolidación
 ├── decisiones/                                                  # Architecture Decision Records (ADRs)
 │   ├── ADR-001_sqlite_wal_y_retiro_pandas_runtime.md            # Motor SQLite3 WAL y esquema relacional
 │   ├── ADR-002_arquitectura_capas_y_contenedor.md               # Separación Core / Application / Infra / UI
@@ -65,3 +67,4 @@ DEVELOP/
 | **[REP-005](reportes/REP-005_fase_b4_exportador_xlsx_y_radar_estaciones.md)** | `2026-11-13` | `v4.1.0a4` | Fase B4 — Exportador Ejecutivo `.xlsx` Multi-Hoja y Radar de Estaciones | Implementación de `aquaterra/infrastructure/exportacion/` (libros `.xlsx` de 3 hojas con stdlib y `.csv` ancho), `StationDiscoveryService` (radar priorizado por severidad, buscador por parcela/tipo y detector/importador MicroSD), `AnalyticsAndExportService` y suite de 71 pruebas en verde. |
 | **[REP-006](reportes/REP-006_fase_b5_orquestador_ia_y_copiloto_calibracion.md)** | `2026-11-13` | `v4.1.0` | Fase B5 — Orquestador IA Híbrido, Copiloto de Calibración, Rollback y Mejoras IoT | Implementación de `aquaterra/core/copiloto/` (cotas físicas anti-alucinación, `AsesorDeterministaCopiloto`, contratos JSON Schema), `aquaterra/infrastructure/ia/` (`ClienteGeminiAIStudio`, `ClienteOllamaLocal`, `OrquestadorIA`), `CalibrationCopilotService` (aplicación y rollback en 1 clic + exportador `.jsonl`), reparación RTC (`calidad=2`), sincronización automática de humedad en parcelas y suite de 78 pruebas en verde. |
 | **[REP-007](reportes/REP-007_sprint_v42_conectores_activos_ubidots_clima_nrf24_y_notificaciones.md)** | `2026-11-13` | `v4.2.0` | Sprint v4.2 — Conectores Activos (Ubidots REST, Open-Meteo UTP Pereira, Gateway `nRF24L01+ PA+LNA`), Búsqueda Inteligente y Notificaciones | Implementación de `ClienteUbidotsREST` (descarga incremental por marca de agua para `terrabit-nodointi` e `inbeersa-nodo01`), `ClienteOpenMeteo` (`4.7905° N, -75.6904° O`), receptor serial `nRF24L01+ PA+LNA` (2.4 GHz), `DespachadorNotificaciones` (`n8n` Webhook + Telegram Bot), precalentamiento de Ollama (`qwen2.5:3b`), `narrar_pulso_24h`, búsqueda inteligente y suite de 82 pruebas en verde. |
+| **[REP-008](reportes/REP-008_frontend_v50_app_shell_hibrido_y_consolidacion.md)** | `2026-11-14` | `v5.0.0` | Frontend `v5.0.0` — *App Shell* Híbrido *Local-First*, Tema Dual, 7 Vistas y Consolidación Final | Implementación de `AppShell` persistente (`Top Command Bar`, búsqueda `Ctrl+K`, píldoras Online/Offline, `Sidebar`, `Status Footer`), temas duales `aquaterra-dark`/`aquaterra-light`, telemetría adaptativa por estación, consola de 5 candados/bomba, Copiloto con 1-clic Aplicar/Rollback, ingesta USB-Serial `nRF24L01+`/MicroSD, configuración gráfica `.env`/usuarios y suite completa de 86 pruebas en verde. |

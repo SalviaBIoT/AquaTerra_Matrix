@@ -83,6 +83,21 @@ class RepositorioUsuarios:
     def actualizar_hash(self, usuario_id: int, hash_clave: str) -> None:
         self._db.execute("UPDATE usuarios SET hash_clave = ? WHERE id = ?", (hash_clave, usuario_id))
 
+    def listar(self) -> list[Usuario]:
+        """Lista todas las cuentas (activas e inactivas) para la consola de administración v5.0."""
+        filas = self._db.execute("SELECT * FROM usuarios ORDER BY id").fetchall()
+        return [self._a_entidad(f) for f in filas]
+
+    def existe(self, usuario: str) -> bool:
+        fila = self._db.execute(
+            "SELECT 1 FROM usuarios WHERE lower(usuario) = lower(?)", (usuario.strip(),)
+        ).fetchone()
+        return fila is not None
+
+    def hash_de(self, usuario_id: int) -> str | None:
+        fila = self._db.execute("SELECT hash_clave FROM usuarios WHERE id = ?", (usuario_id,)).fetchone()
+        return str(fila["hash_clave"]) if fila else None
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Parcelas
@@ -366,6 +381,17 @@ class RepositorioLecturas:
             (estacion_id,),
         ).fetchone()
         return fila[0]
+
+    def ultimo_epoch_por_fuente(self, fuente: str) -> int | None:
+        """Última lectura válida recibida por un canal (``ubidots``, ``lora``, ``sd_csv``...)."""
+        fila = self._db.execute(
+            "SELECT MAX(ts_epoch) FROM lecturas_sensor WHERE fuente = ? AND calidad < 2",
+            (fuente,),
+        ).fetchone()
+        return fila[0]
+
+    def contar(self) -> int:
+        return int(self._db.execute("SELECT COUNT(*) FROM lecturas_sensor").fetchone()[0])
 
     def reparar_timestamps_rtc(
         self,
