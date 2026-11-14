@@ -8,6 +8,20 @@
 
 ---
 
+## [v4.1.0a3] - 2026-11-13: Fase B3 — Motor de Enclavamientos Duros, Salud de Bomba e Incidencia de Riego
+
+### 1. Hitos Estructurales Implementados (Ver [REP-004](DEVELOP/reportes/REP-004_fase_b3_enclavamientos_salud_bomba_e_incidencia_riego.md))
+- **Paquete Modular de Control Determinista (`aquaterra/core/control/`):**
+  - `enclavamientos.py`: `SafetyInterlockEngine` con 5 candados (`CANDADO_LLUVIA_ACTIVA`, `CANDADO_SATURACION`, `CANDADO_VOLUMEN_MAXIMO`, `CANDADO_ENERGIA_NODO`, `CANDADO_SALUD_BOMBA`). Transparente por defecto en modo `SIN_SENSOR_ACTUADOR` mientras no esté instalada la bomba física.
+  - `actuadores.py`: `diagnosticar_salud_bomba()` para los 4 modos (`SIN_SENSOR_ACTUADOR`, `VIBRACION_RMS`, `CORRIENTE_O_CAUDAL`, `IMPACTO_SUELO_DIFERIDO`) y `evaluar_incidencia_riego()` ($\Delta\theta_A, \Delta\theta_B$).
+  - `planificador.py`: `generar_recomendacion_proactiva()` cruzando humedad actual, tasa de secado edáfico ($\Delta\theta_A/\Delta t$), pronóstico de lluvia 24h y enclavamientos.
+- **Servicio de Aplicación (`aquaterra/application/control_servicio.py`):**
+  `DecisionAndControlService` integrado en `Contenedor.control` con `recomendar_riego_parcela()`, `programar_riego_validado()` y `registrar_verificacion_e_incidencia()`.
+- **Verificación Automatizada:**
+  Suite de **68 pruebas en `pytest`** (`0 warnings`) y **`ruff check .`** (`All checks passed!`).
+
+---
+
 ## [v4.1.0a2] - 2026-11-13: Fase B2 — Motor Analítico de Series Temporales, Ventana Móvil SQLite y Pulso 24h
 
 ### 1. Hitos Estructurales Implementados (Ver [REP-003](DEVELOP/reportes/REP-003_fase_b2_motor_analitico_ventana_movil_y_pulso_24h.md))
