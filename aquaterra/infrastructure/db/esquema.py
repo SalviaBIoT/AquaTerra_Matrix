@@ -100,8 +100,117 @@ CREATE TABLE auditoria (
 CREATE INDEX ix_auditoria_entidad ON auditoria (entidad, entidad_id);
 """
 
+_MIGRACION_002 = """
+CREATE TABLE eventos_estacion (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    estacion_id     INTEGER NOT NULL REFERENCES estaciones (id) ON DELETE CASCADE,
+    tipo_evento     TEXT    NOT NULL,
+    valor_texto     TEXT,
+    archivo_ruta    TEXT,
+    metadatos_json  TEXT,
+    ts_epoch        INTEGER NOT NULL,
+    ts_iso          TEXT    NOT NULL,
+    UNIQUE (estacion_id, tipo_evento, ts_epoch)
+);
+CREATE INDEX ix_eventos_estacion_ts ON eventos_estacion (estacion_id, ts_epoch);
+
+CREATE TABLE calibraciones_nodo (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    estacion_id      INTEGER REFERENCES estaciones (id) ON DELETE CASCADE,
+    parcela_id       INTEGER REFERENCES parcelas (id) ON DELETE CASCADE,
+    version          INTEGER NOT NULL CHECK (version >= 1),
+    parametros_json  TEXT    NOT NULL,
+    motivo           TEXT    NOT NULL,
+    autor_id         INTEGER REFERENCES usuarios (id) ON DELETE SET NULL,
+    activa           INTEGER NOT NULL DEFAULT 1 CHECK (activa IN (0, 1)),
+    creado_en        TEXT    NOT NULL,
+    CHECK (estacion_id IS NOT NULL OR parcela_id IS NOT NULL)
+);
+CREATE INDEX ix_calibraciones_destino ON calibraciones_nodo (estacion_id, parcela_id, version);
+
+CREATE TABLE salud_actuadores_log (
+    id                    INTEGER PRIMARY KEY AUTOINCREMENT,
+    evento_riego_id       INTEGER NOT NULL UNIQUE REFERENCES eventos_riego (id) ON DELETE CASCADE,
+    modo_verificacion     TEXT    NOT NULL CHECK (
+        modo_verificacion IN ('sin_sensor_actuador', 'vibracion_rms', 'corriente_o_caudal', 'impacto_suelo_diferido')
+    ),
+    vibracion_rms_g       REAL    CHECK (vibracion_rms_g >= 0),
+    vibracion_freq_hz     REAL    CHECK (vibracion_freq_hz >= 0),
+    corriente_a           REAL    CHECK (corriente_a >= 0),
+    caudal_lpm            REAL    CHECK (caudal_lpm >= 0),
+    apertura_max_pct      REAL    NOT NULL DEFAULT 100 CHECK (apertura_max_pct BETWEEN 0 AND 100),
+    diagnostico_mecanico  TEXT    NOT NULL CHECK (
+        diagnostico_mecanico IN (
+            'nominal', 'sin_telemetria', 'fallo_no_arranco', 'cavitacion_o_vacio', 'sobrecarga_mecanica'
+        )
+    ),
+    registrado_en         TEXT    NOT NULL
+);
+
+CREATE TABLE incidencia_riego (
+    id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+    evento_riego_id    INTEGER NOT NULL UNIQUE REFERENCES eventos_riego (id) ON DELETE CASCADE,
+    humedad_a_antes    REAL    NOT NULL CHECK (humedad_a_antes BETWEEN 0 AND 100),
+    humedad_a_despues  REAL    NOT NULL CHECK (humedad_a_despues BETWEEN 0 AND 100),
+    humedad_b_antes    REAL    CHECK (humedad_b_antes BETWEEN 0 AND 100),
+    humedad_b_despues  REAL    CHECK (humedad_b_despues BETWEEN 0 AND 100),
+    delta_a_pct        REAL    NOT NULL,
+    delta_b_pct        REAL,
+    efectividad        TEXT    NOT NULL CHECK (
+        efectividad IN ('efectivo', 'infiltracion_parcial', 'exceso_percolacion', 'sin_respuesta_en_suelo')
+    ),
+    observaciones      TEXT,
+    evaluado_en        TEXT    NOT NULL
+);
+
+CREATE TABLE riegos_programados (
+    id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+    parcela_id           INTEGER NOT NULL REFERENCES parcelas (id) ON DELETE CASCADE,
+    ts_programado_epoch  INTEGER NOT NULL,
+    ts_programado_iso    TEXT    NOT NULL,
+    litros_propuestos    REAL    NOT NULL CHECK (litros_propuestos > 0),
+    apertura_max_pct     REAL    NOT NULL DEFAULT 100 CHECK (apertura_max_pct BETWEEN 0 AND 100),
+    origen               TEXT    NOT NULL DEFAULT 'ia_proactivo',
+    estado               TEXT    NOT NULL DEFAULT 'pendiente' CHECK (
+        estado IN ('pendiente', 'ejecutado', 'bloqueado_interlock', 'cancelado')
+    ),
+    motivo_bloqueo       TEXT,
+    creado_en            TEXT    NOT NULL
+);
+CREATE INDEX ix_riegos_prog_parcela_estado ON riegos_programados (parcela_id, estado, ts_programado_epoch);
+
+CREATE TABLE pronostico_clima_cache (
+    id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+    estacion_id        INTEGER NOT NULL REFERENCES estaciones (id) ON DELETE CASCADE,
+    ts_objetivo_epoch  INTEGER NOT NULL,
+    ts_objetivo_iso    TEXT    NOT NULL,
+    temp_c             REAL,
+    hum_relativa_pct   REAL    CHECK (hum_relativa_pct BETWEEN 0 AND 100),
+    lluvia_prob_pct    REAL    CHECK (lluvia_prob_pct BETWEEN 0 AND 100),
+    lluvia_mm          REAL    CHECK (lluvia_mm >= 0),
+    viento_ms          REAL    CHECK (viento_ms >= 0),
+    et0_mm             REAL    CHECK (et0_mm >= 0),
+    actualizado_en     TEXT    NOT NULL,
+    UNIQUE (estacion_id, ts_objetivo_epoch)
+);
+CREATE INDEX ix_pronostico_estacion_ts ON pronostico_clima_cache (estacion_id, ts_objetivo_epoch);
+
+CREATE TABLE conversaciones_copiloto (
+    id                       INTEGER PRIMARY KEY AUTOINCREMENT,
+    estacion_id              INTEGER REFERENCES estaciones (id) ON DELETE SET NULL,
+    parcela_id               INTEGER REFERENCES parcelas (id) ON DELETE SET NULL,
+    usuario_id               INTEGER REFERENCES usuarios (id) ON DELETE SET NULL,
+    mensaje_usuario          TEXT    NOT NULL,
+    diagnostico_ia           TEXT    NOT NULL,
+    ajustes_propuestos_json  TEXT,
+    calibracion_aplicada_id  INTEGER REFERENCES calibraciones_nodo (id) ON DELETE SET NULL,
+    proveedor_ia             TEXT    NOT NULL,
+    ts_iso                   TEXT    NOT NULL
+);
+"""
+
 # Lista ordenada: el índice + 1 es el número de versión del esquema.
-MIGRACIONES: tuple[str, ...] = (_MIGRACION_001,)
+MIGRACIONES: tuple[str, ...] = (_MIGRACION_001, _MIGRACION_002)
 VERSION_ESQUEMA = len(MIGRACIONES)
 
 

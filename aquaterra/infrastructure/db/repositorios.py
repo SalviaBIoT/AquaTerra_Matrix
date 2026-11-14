@@ -18,16 +18,27 @@ from typing import Any
 from aquaterra.core import tiempo
 from aquaterra.core.domain import (
     DatosParcela,
+    DiagnosticoMecanicoBomba,
+    EfectividadRiego,
     EntidadNoEncontrada,
     Estacion,
+    EstadoRiegoProgramado,
+    EventoEstacion,
     EventoRiego,
+    IncidenciaRiego,
+    InteraccionCopiloto,
     LecturaSensor,
+    ModoVerificacionRiego,
     OrigenRiego,
     Parcela,
+    PuntoPronosticoClima,
+    RegistroSaludActuador,
+    RiegoProgramado,
     Rol,
     TipoEstacion,
     TipoSuelo,
     Usuario,
+    VersionCalibracion,
 )
 
 
@@ -309,3 +320,551 @@ class RepositorioAuditoria:
                 "SELECT * FROM auditoria WHERE entidad = ? ORDER BY id", (entidad,)
             ).fetchall()
         return self._db.execute("SELECT * FROM auditoria ORDER BY id").fetchall()
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Eventos discretos de estación, calibraciones versionadas y control físico (v2)
+# ──────────────────────────────────────────────────────────────────────────────
+class RepositorioEventosEstacion:
+    def __init__(self, conexion: sqlite3.Connection):
+        self._db = conexion
+
+    @staticmethod
+    def _a_entidad(fila: sqlite3.Row) -> EventoEstacion:
+        metadatos = json.loads(fila["metadatos_json"]) if fila["metadatos_json"] else None
+        return EventoEstacion(
+            id=fila["id"],
+            estacion_id=fila["estacion_id"],
+            tipo_evento=fila["tipo_evento"],
+            ts_epoch=fila["ts_epoch"],
+            ts_iso=fila["ts_iso"],
+            valor_texto=fila["valor_texto"],
+            archivo_ruta=fila["archivo_ruta"],
+            metadatos=metadatos,
+        )
+
+    def insertar_lote(self, eventos: Iterable[EventoEstacion]) -> int:
+        antes = self._db.total_changes
+        self._db.executemany(
+            """INSERT OR IGNORE INTO eventos_estacion
+               (estacion_id, tipo_evento, valor_texto, archivo_ruta, metadatos_json, ts_epoch, ts_iso)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            [
+                (
+                    ev.estacion_id,
+                    ev.tipo_evento,
+                    ev.valor_texto,
+                    ev.archivo_ruta,
+                    json.dumps(ev.metadatos, ensure_ascii=False, default=str) if ev.metadatos else None,
+                    ev.ts_epoch,
+                    ev.ts_iso,
+                )
+                for ev in eventos
+            ],
+        )
+        return self._db.total_changes - antes
+
+    def listar(
+        self,
+        estacion_id: int,
+        *,
+        tipo_evento: str | None = None,
+        desde_epoch: int = 0,
+    ) -> list[EventoEstacion]:
+        if tipo_evento is not None:
+            filas = self._db.execute(
+                """SELECT * FROM eventos_estacion
+                   WHERE estacion_id = ? AND tipo_evento = ? AND ts_epoch >= ?
+                   ORDER BY ts_epoch, id""",
+                (estacion_id, tipo_evento, desde_epoch),
+            ).fetchall()
+        else:
+            filas = self._db.execute(
+                """SELECT * FROM eventos_estacion
+                   WHERE estacion_id = ? AND ts_epoch >= ?
+                   ORDER BY ts_epoch, id""",
+                (estacion_id, desde_epoch),
+            ).fetchall()
+        return [self._a_entidad(f) for f in filas]
+
+
+class RepositorioCalibraciones:
+    def __init__(self, conexion: sqlite3.Connection):
+        self._db = conexion
+
+    @staticmethod
+    def _a_entidad(fila: sqlite3.Row) -> VersionCalibracion:
+        return VersionCalibracion(
+            id=fila["id"],
+            estacion_id=fila["estacion_id"],
+            parcela_id=fila["parcela_id"],
+            version=fila["version"],
+            parametros=json.loads(fila["parametros_json"]),
+            motivo=fila["motivo"],
+            autor_id=fila["autor_id"],
+            activa=bool(fila["activa"]),
+            creado_en=fila["creado_en"],
+        )
+
+    def guardar_nueva_version(
+        self,
+        *,
+        estacion_id: int | None = None,
+        parcela_id: int | None = None,
+        parametros: dict[str, Any],
+        motivo: str,
+        autor_id: int | None = None,
+    ) -> VersionCalibracion:
+        if estacion_id is None and parcela_id is None:
+            raise ValueError("Debe especificar al menos estacion_id o parcela_id.")
+
+        fila_max = self._db.execute(
+            """SELECT COALESCE(MAX(version), 0) FROM calibraciones_nodo
+               WHERE estacion_id IS ? AND parcela_id IS ?""",
+            (estacion_id, parcela_id),
+        ).fetchone()
+        nueva_version = int(fila_max[0]) + 1
+
+        self._db.execute(
+            """UPDATE calibraciones_nodo SET activa = 0
+               WHERE estacion_id IS ? AND parcela_id IS ? AND activa = 1""",
+            (estacion_id, parcela_id),
+        )
+        cursor = self._db.execute(
+            """INSERT INTO calibraciones_nodo
+               (estacion_id, parcela_id, version, parametros_json, motivo, autor_id, activa, creado_en)
+               VALUES (?, ?, ?, ?, ?, ?, 1, ?)""",
+            (
+                estacion_id,
+                parcela_id,
+                nueva_version,
+                json.dumps(parametros, ensure_ascii=False, sort_keys=True),
+                motivo.strip(),
+                autor_id,
+                tiempo.ahora_iso(),
+            ),
+        )
+        fila = self._db.execute(
+            "SELECT * FROM calibraciones_nodo WHERE id = ?", (cursor.lastrowid,)
+        ).fetchone()
+        return self._a_entidad(fila)
+
+    def obtener_activa(
+        self,
+        *,
+        estacion_id: int | None = None,
+        parcela_id: int | None = None,
+    ) -> VersionCalibracion | None:
+        fila = self._db.execute(
+            """SELECT * FROM calibraciones_nodo
+               WHERE estacion_id IS ? AND parcela_id IS ? AND activa = 1
+               ORDER BY version DESC LIMIT 1""",
+            (estacion_id, parcela_id),
+        ).fetchone()
+        return self._a_entidad(fila) if fila else None
+
+    def listar_versiones(
+        self,
+        *,
+        estacion_id: int | None = None,
+        parcela_id: int | None = None,
+    ) -> list[VersionCalibracion]:
+        filas = self._db.execute(
+            """SELECT * FROM calibraciones_nodo
+               WHERE estacion_id IS ? AND parcela_id IS ?
+               ORDER BY version ASC""",
+            (estacion_id, parcela_id),
+        ).fetchall()
+        return [self._a_entidad(f) for f in filas]
+
+    def restaurar_version(
+        self,
+        version_id: int,
+        *,
+        autor_id: int | None = None,
+    ) -> VersionCalibracion:
+        fila = self._db.execute(
+            "SELECT * FROM calibraciones_nodo WHERE id = ?", (version_id,)
+        ).fetchone()
+        if fila is None:
+            raise EntidadNoEncontrada("VersionCalibracion", version_id)
+        anterior = self._a_entidad(fila)
+        return self.guardar_nueva_version(
+            estacion_id=anterior.estacion_id,
+            parcela_id=anterior.parcela_id,
+            parametros=anterior.parametros,
+            motivo=f"Rollback a versión v{anterior.version}",
+            autor_id=autor_id,
+        )
+
+
+class RepositorioSaludActuadores:
+    def __init__(self, conexion: sqlite3.Connection):
+        self._db = conexion
+
+    @staticmethod
+    def _a_entidad(fila: sqlite3.Row) -> RegistroSaludActuador:
+        return RegistroSaludActuador(
+            id=fila["id"],
+            evento_riego_id=fila["evento_riego_id"],
+            modo_verificacion=ModoVerificacionRiego(fila["modo_verificacion"]),
+            vibracion_rms_g=fila["vibracion_rms_g"],
+            vibracion_freq_hz=fila["vibracion_freq_hz"],
+            corriente_a=fila["corriente_a"],
+            caudal_lpm=fila["caudal_lpm"],
+            apertura_max_pct=fila["apertura_max_pct"],
+            diagnostico_mecanico=DiagnosticoMecanicoBomba(fila["diagnostico_mecanico"]),
+            registrado_en=fila["registrado_en"],
+        )
+
+    def registrar(
+        self,
+        *,
+        evento_riego_id: int,
+        modo_verificacion: ModoVerificacionRiego,
+        diagnostico_mecanico: DiagnosticoMecanicoBomba,
+        apertura_max_pct: float = 100.0,
+        vibracion_rms_g: float | None = None,
+        vibracion_freq_hz: float | None = None,
+        corriente_a: float | None = None,
+        caudal_lpm: float | None = None,
+    ) -> RegistroSaludActuador:
+        cursor = self._db.execute(
+            """INSERT INTO salud_actuadores_log
+               (evento_riego_id, modo_verificacion, vibracion_rms_g, vibracion_freq_hz,
+                corriente_a, caudal_lpm, apertura_max_pct, diagnostico_mecanico, registrado_en)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                evento_riego_id,
+                modo_verificacion.value,
+                vibracion_rms_g,
+                vibracion_freq_hz,
+                corriente_a,
+                caudal_lpm,
+                apertura_max_pct,
+                diagnostico_mecanico.value,
+                tiempo.ahora_iso(),
+            ),
+        )
+        fila = self._db.execute(
+            "SELECT * FROM salud_actuadores_log WHERE id = ?", (cursor.lastrowid,)
+        ).fetchone()
+        return self._a_entidad(fila)
+
+    def por_evento(self, evento_riego_id: int) -> RegistroSaludActuador | None:
+        fila = self._db.execute(
+            "SELECT * FROM salud_actuadores_log WHERE evento_riego_id = ?", (evento_riego_id,)
+        ).fetchone()
+        return self._a_entidad(fila) if fila else None
+
+
+class RepositorioIncidenciaRiego:
+    def __init__(self, conexion: sqlite3.Connection):
+        self._db = conexion
+
+    @staticmethod
+    def _a_entidad(fila: sqlite3.Row) -> IncidenciaRiego:
+        return IncidenciaRiego(
+            id=fila["id"],
+            evento_riego_id=fila["evento_riego_id"],
+            humedad_a_antes=fila["humedad_a_antes"],
+            humedad_a_despues=fila["humedad_a_despues"],
+            humedad_b_antes=fila["humedad_b_antes"],
+            humedad_b_despues=fila["humedad_b_despues"],
+            delta_a_pct=fila["delta_a_pct"],
+            delta_b_pct=fila["delta_b_pct"],
+            efectividad=EfectividadRiego(fila["efectividad"]),
+            observaciones=fila["observaciones"],
+            evaluado_en=fila["evaluado_en"],
+        )
+
+    def registrar(
+        self,
+        *,
+        evento_riego_id: int,
+        humedad_a_antes: float,
+        humedad_a_despues: float,
+        efectividad: EfectividadRiego,
+        humedad_b_antes: float | None = None,
+        humedad_b_despues: float | None = None,
+        observaciones: str | None = None,
+    ) -> IncidenciaRiego:
+        delta_a = round(humedad_a_despues - humedad_a_antes, 2)
+        delta_b = (
+            round(humedad_b_despues - humedad_b_antes, 2)
+            if humedad_b_antes is not None and humedad_b_despues is not None
+            else None
+        )
+        cursor = self._db.execute(
+            """INSERT INTO incidencia_riego
+               (evento_riego_id, humedad_a_antes, humedad_a_despues, humedad_b_antes, humedad_b_despues,
+                delta_a_pct, delta_b_pct, efectividad, observaciones, evaluado_en)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                evento_riego_id,
+                humedad_a_antes,
+                humedad_a_despues,
+                humedad_b_antes,
+                humedad_b_despues,
+                delta_a,
+                delta_b,
+                efectividad.value,
+                observaciones,
+                tiempo.ahora_iso(),
+            ),
+        )
+        fila = self._db.execute(
+            "SELECT * FROM incidencia_riego WHERE id = ?", (cursor.lastrowid,)
+        ).fetchone()
+        return self._a_entidad(fila)
+
+    def por_evento(self, evento_riego_id: int) -> IncidenciaRiego | None:
+        fila = self._db.execute(
+            "SELECT * FROM incidencia_riego WHERE evento_riego_id = ?", (evento_riego_id,)
+        ).fetchone()
+        return self._a_entidad(fila) if fila else None
+
+    def listar_por_parcela(self, parcela_id: int) -> list[IncidenciaRiego]:
+        filas = self._db.execute(
+            """SELECT i.* FROM incidencia_riego i
+               JOIN eventos_riego r ON r.id = i.evento_riego_id
+               WHERE r.parcela_id = ?
+               ORDER BY r.ts_epoch ASC""",
+            (parcela_id,),
+        ).fetchall()
+        return [self._a_entidad(f) for f in filas]
+
+
+class RepositorioRiegosProgramados:
+    def __init__(self, conexion: sqlite3.Connection):
+        self._db = conexion
+
+    @staticmethod
+    def _a_entidad(fila: sqlite3.Row) -> RiegoProgramado:
+        return RiegoProgramado(
+            id=fila["id"],
+            parcela_id=fila["parcela_id"],
+            ts_programado_epoch=fila["ts_programado_epoch"],
+            ts_programado_iso=fila["ts_programado_iso"],
+            litros_propuestos=fila["litros_propuestos"],
+            apertura_max_pct=fila["apertura_max_pct"],
+            origen=fila["origen"],
+            estado=EstadoRiegoProgramado(fila["estado"]),
+            motivo_bloqueo=fila["motivo_bloqueo"],
+            creado_en=fila["creado_en"],
+        )
+
+    def programar(
+        self,
+        *,
+        parcela_id: int,
+        ts_programado_epoch: int,
+        ts_programado_iso: str,
+        litros_propuestos: float,
+        apertura_max_pct: float = 100.0,
+        origen: str = "ia_proactivo",
+    ) -> RiegoProgramado:
+        cursor = self._db.execute(
+            """INSERT INTO riegos_programados
+               (parcela_id, ts_programado_epoch, ts_programado_iso, litros_propuestos,
+                apertura_max_pct, origen, estado, creado_en)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                parcela_id,
+                ts_programado_epoch,
+                ts_programado_iso,
+                litros_propuestos,
+                apertura_max_pct,
+                origen,
+                EstadoRiegoProgramado.PENDIENTE.value,
+                tiempo.ahora_iso(),
+            ),
+        )
+        fila = self._db.execute(
+            "SELECT * FROM riegos_programados WHERE id = ?", (cursor.lastrowid,)
+        ).fetchone()
+        return self._a_entidad(fila)
+
+    def actualizar_estado(
+        self,
+        riego_prog_id: int,
+        estado: EstadoRiegoProgramado,
+        *,
+        motivo_bloqueo: str | None = None,
+    ) -> RiegoProgramado:
+        cursor = self._db.execute(
+            "UPDATE riegos_programados SET estado = ?, motivo_bloqueo = ? WHERE id = ?",
+            (estado.value, motivo_bloqueo, riego_prog_id),
+        )
+        if cursor.rowcount == 0:
+            raise EntidadNoEncontrada("RiegoProgramado", riego_prog_id)
+        fila = self._db.execute(
+            "SELECT * FROM riegos_programados WHERE id = ?", (riego_prog_id,)
+        ).fetchone()
+        return self._a_entidad(fila)
+
+    def listar_pendientes(self, parcela_id: int | None = None) -> list[RiegoProgramado]:
+        if parcela_id is not None:
+            filas = self._db.execute(
+                """SELECT * FROM riegos_programados
+                   WHERE parcela_id = ? AND estado = 'pendiente'
+                   ORDER BY ts_programado_epoch ASC""",
+                (parcela_id,),
+            ).fetchall()
+        else:
+            filas = self._db.execute(
+                """SELECT * FROM riegos_programados
+                   WHERE estado = 'pendiente'
+                   ORDER BY ts_programado_epoch ASC"""
+            ).fetchall()
+        return [self._a_entidad(f) for f in filas]
+
+
+class RepositorioPronosticoClima:
+    def __init__(self, conexion: sqlite3.Connection):
+        self._db = conexion
+
+    @staticmethod
+    def _a_entidad(fila: sqlite3.Row) -> PuntoPronosticoClima:
+        return PuntoPronosticoClima(
+            estacion_id=fila["estacion_id"],
+            ts_objetivo_epoch=fila["ts_objetivo_epoch"],
+            ts_objetivo_iso=fila["ts_objetivo_iso"],
+            temp_c=fila["temp_c"],
+            hum_relativa_pct=fila["hum_relativa_pct"],
+            lluvia_prob_pct=fila["lluvia_prob_pct"],
+            lluvia_mm=fila["lluvia_mm"],
+            viento_ms=fila["viento_ms"],
+            et0_mm=fila["et0_mm"],
+        )
+
+    def guardar_lote(self, puntos: Iterable[PuntoPronosticoClima]) -> int:
+        antes = self._db.total_changes
+        marca = tiempo.ahora_iso()
+        self._db.executemany(
+            """INSERT OR REPLACE INTO pronostico_clima_cache
+               (estacion_id, ts_objetivo_epoch, ts_objetivo_iso, temp_c, hum_relativa_pct,
+                lluvia_prob_pct, lluvia_mm, viento_ms, et0_mm, actualizado_en)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            [
+                (
+                    p.estacion_id,
+                    p.ts_objetivo_epoch,
+                    p.ts_objetivo_iso,
+                    p.temp_c,
+                    p.hum_relativa_pct,
+                    p.lluvia_prob_pct,
+                    p.lluvia_mm,
+                    p.viento_ms,
+                    p.et0_mm,
+                    marca,
+                )
+                for p in puntos
+            ],
+        )
+        return self._db.total_changes - antes
+
+    def ventana(
+        self,
+        estacion_id: int,
+        *,
+        desde_epoch: int,
+        hasta_epoch: int,
+    ) -> list[PuntoPronosticoClima]:
+        filas = self._db.execute(
+            """SELECT * FROM pronostico_clima_cache
+               WHERE estacion_id = ? AND ts_objetivo_epoch BETWEEN ? AND ?
+               ORDER BY ts_objetivo_epoch ASC""",
+            (estacion_id, desde_epoch, hasta_epoch),
+        ).fetchall()
+        return [self._a_entidad(f) for f in filas]
+
+
+class RepositorioCopiloto:
+    def __init__(self, conexion: sqlite3.Connection):
+        self._db = conexion
+
+    @staticmethod
+    def _a_entidad(fila: sqlite3.Row) -> InteraccionCopiloto:
+        ajustes = (
+            json.loads(fila["ajustes_propuestos_json"])
+            if fila["ajustes_propuestos_json"]
+            else None
+        )
+        return InteraccionCopiloto(
+            id=fila["id"],
+            estacion_id=fila["estacion_id"],
+            parcela_id=fila["parcela_id"],
+            usuario_id=fila["usuario_id"],
+            mensaje_usuario=fila["mensaje_usuario"],
+            diagnostico_ia=fila["diagnostico_ia"],
+            ajustes_propuestos=ajustes,
+            calibracion_aplicada_id=fila["calibracion_aplicada_id"],
+            proveedor_ia=fila["proveedor_ia"],
+            ts_iso=fila["ts_iso"],
+        )
+
+    def registrar(
+        self,
+        *,
+        mensaje_usuario: str,
+        diagnostico_ia: str,
+        proveedor_ia: str,
+        estacion_id: int | None = None,
+        parcela_id: int | None = None,
+        usuario_id: int | None = None,
+        ajustes_propuestos: dict[str, Any] | None = None,
+        calibracion_aplicada_id: int | None = None,
+    ) -> InteraccionCopiloto:
+        cursor = self._db.execute(
+            """INSERT INTO conversaciones_copiloto
+               (estacion_id, parcela_id, usuario_id, mensaje_usuario, diagnostico_ia,
+                ajustes_propuestos_json, calibracion_aplicada_id, proveedor_ia, ts_iso)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                estacion_id,
+                parcela_id,
+                usuario_id,
+                mensaje_usuario,
+                diagnostico_ia,
+                (
+                    json.dumps(ajustes_propuestos, ensure_ascii=False)
+                    if ajustes_propuestos is not None
+                    else None
+                ),
+                calibracion_aplicada_id,
+                proveedor_ia,
+                tiempo.ahora_iso(),
+            ),
+        )
+        fila = self._db.execute(
+            "SELECT * FROM conversaciones_copiloto WHERE id = ?", (cursor.lastrowid,)
+        ).fetchone()
+        return self._a_entidad(fila)
+
+    def listar(
+        self,
+        *,
+        estacion_id: int | None = None,
+        parcela_id: int | None = None,
+    ) -> list[InteraccionCopiloto]:
+        if estacion_id is not None and parcela_id is not None:
+            filas = self._db.execute(
+                """SELECT * FROM conversaciones_copiloto
+                   WHERE estacion_id = ? AND parcela_id = ?
+                   ORDER BY id ASC""",
+                (estacion_id, parcela_id),
+            ).fetchall()
+        elif estacion_id is not None:
+            filas = self._db.execute(
+                "SELECT * FROM conversaciones_copiloto WHERE estacion_id = ? ORDER BY id ASC",
+                (estacion_id,),
+            ).fetchall()
+        elif parcela_id is not None:
+            filas = self._db.execute(
+                "SELECT * FROM conversaciones_copiloto WHERE parcela_id = ? ORDER BY id ASC",
+                (parcela_id,),
+            ).fetchall()
+        else:
+            filas = self._db.execute("SELECT * FROM conversaciones_copiloto ORDER BY id ASC").fetchall()
+        return [self._a_entidad(f) for f in filas]
