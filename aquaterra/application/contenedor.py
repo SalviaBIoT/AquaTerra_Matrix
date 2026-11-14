@@ -12,7 +12,9 @@ import sqlite3
 from dataclasses import dataclass, field
 
 from aquaterra.application.control_servicio import DecisionAndControlService
+from aquaterra.application.exportacion_servicio import AnalyticsAndExportService
 from aquaterra.application.pulso_servicio import NodePulseService
+from aquaterra.application.radar_servicio import StationDiscoveryService
 from aquaterra.application.servicios import (
     ServicioAutenticacion,
     ServicioMonitor,
@@ -37,6 +39,8 @@ class Contenedor:
     monitor: ServicioMonitor = field(init=False)
     pulso: NodePulseService = field(init=False)
     control: DecisionAndControlService = field(init=False)
+    radar: StationDiscoveryService = field(init=False)
+    exportacion: AnalyticsAndExportService = field(init=False)
 
     def __post_init__(self) -> None:
         self.auth = ServicioAutenticacion(self.conexion)
@@ -45,6 +49,8 @@ class Contenedor:
         self.monitor = ServicioMonitor(self.conexion)
         self.pulso = NodePulseService(self.conexion)
         self.control = DecisionAndControlService(self.conexion)
+        self.radar = StationDiscoveryService(self.conexion)
+        self.exportacion = AnalyticsAndExportService(self.conexion)
 
     def cerrar(self) -> None:
         try:

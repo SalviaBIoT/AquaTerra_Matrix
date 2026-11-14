@@ -8,6 +8,20 @@
 
 ---
 
+## [v4.1.0a4] - 2026-11-13: Fase B4 — Exportador Ejecutivo `.xlsx` Multi-Hoja y Radar de Estaciones
+
+### 1. Hitos Estructurales Implementados (Ver [REP-005](DEVELOP/reportes/REP-005_fase_b4_exportador_xlsx_y_radar_estaciones.md))
+- **Exportador Ejecutivo `.xlsx` y `.csv` (`aquaterra/infrastructure/exportacion/`):**
+  - `xlsx_writer.py`: Motor OpenXML ligero con la biblioteca estándar de Python (`zipfile` + `xml.etree.ElementTree`, cero dependencias externas).
+  - `exportador_estacion.py`: Generación de reportes `.xlsx` con 3 hojas (`1_Ficha_y_Resumen`, `2_Series_Temporales` en formato ancho con medias móviles, y `3_Eventos_y_Riegos`) y exportación `.csv`.
+- **Radar de Nodos y Servicio de Exportación (`aquaterra/application/`):**
+  - `radar_servicio.py`: `StationDiscoveryService` con priorización automática por severidad (`CRITICO` $\to$ `ATENCION` $\to$ `OPTIMO` $\to$ `SIN_DATOS`), búsqueda multicriterio (incluyendo nombre de parcela asociada) y autodetección/importación de archivos MicroSD de las 4 familias.
+  - `exportacion_servicio.py`: `AnalyticsAndExportService` integrado en `Contenedor.exportacion` junto con `Contenedor.radar`.
+- **Verificación Automatizada:**
+  Suite de **71 pruebas en `pytest`** (`0 warnings`) y **`ruff check .`** (`All checks passed!`).
+
+---
+
 ## [v4.1.0a3] - 2026-11-13: Fase B3 — Motor de Enclavamientos Duros, Salud de Bomba e Incidencia de Riego
 
 ### 1. Hitos Estructurales Implementados (Ver [REP-004](DEVELOP/reportes/REP-004_fase_b3_enclavamientos_salud_bomba_e_incidencia_riego.md))
