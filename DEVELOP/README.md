@@ -17,7 +17,8 @@ DEVELOP/
 ├── ARQUITECTURA_MAESTRA_BRUJULA.md                              # Brújula Maestra v4.0 -> v5.0 (Variables, Riesgos y Backend)
 ├── reportes/                                                    # Reportes paso a paso de cada fase ejecutada
 │   ├── REP-000_migracion_semilla_y_entorno.md                   # Fase 0: Semilla v3.2, Git, .venv y diagnóstico
-│   └── REP-001_arquitectura_v4_y_resolucion_deuda_tecnica.md    # Fase 1: Arquitectura 4 capas, SQLite WAL y DT-01..05
+│   ├── REP-001_arquitectura_v4_y_resolucion_deuda_tecnica.md    # Fase 1: Arquitectura 4 capas, SQLite WAL y DT-01..05
+│   └── REP-002_fase_b1_esquema_v2_e_ingesta_universal.md        # Fase B1: Esquema v2 (7 tablas) e ingesta 4 familias
 ├── decisiones/                                                  # Architecture Decision Records (ADRs)
 │   ├── ADR-001_sqlite_wal_y_retiro_pandas_runtime.md            # Motor SQLite3 WAL y esquema relacional
 │   ├── ADR-002_arquitectura_capas_y_contenedor.md               # Separación Core / Application / Infra / UI
@@ -52,3 +53,4 @@ DEVELOP/
 |---|---|---|---|---|
 | **[REP-000](reportes/REP-000_migracion_semilla_y_entorno.md)** | `2026-11-12` | `v3.2.0-legacy` | Migración de Semilla, Aislamiento `.venv` y Línea Base Git | Traslado a `C:\Users\danie\Developer\AquaTerra_Matrix`, preservación en `legacy/aquautp_v3.2`, tag `v3.2.0-legacy` y auditoría forense. |
 | **[REP-001](reportes/REP-001_arquitectura_v4_y_resolucion_deuda_tecnica.md)** | `2026-11-13` | `v4.0.0a1` | Re-Arquitectura por Capas, Motor SQLite WAL, Ingesta IoT y Cierre de Deuda Técnica | Implementación del paquete `aquaterra/`, erradicación de `DT-01..05`, migrador automático v3.2 $\to$ SQLite, parsers para Nodo INTI / InBeersa / Ubidots y suite de 47 pruebas automatizadas. |
+| **[REP-002](reportes/REP-002_fase_b1_esquema_v2_e_ingesta_universal.md)** | `2026-11-13` | `v4.1.0a1` | Fase B1 — Esquema SQLite v2, Repositorios de Control e Ingesta Universal | Evolución de SQLite (`_MIGRACION_002`: 7 tablas nuevas de eventos, calibración versionada, actuadores, riegos programados, clima y copiloto), ingesta nativa de Sigatoka (CSV/buffer), Conservación/Páramos, guardia RTC y suite de 57 pruebas en verde. |

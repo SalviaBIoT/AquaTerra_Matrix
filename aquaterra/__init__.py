@@ -16,5 +16,5 @@ Arquitectura por capas (dependencias apuntan siempre hacia adentro):
 - ``ui``             : vistas ttkbootstrap; solo hablan con ``application``.
 """
 
-__version__ = "4.0.0a1"
+__version__ = "4.1.0a1"
 __autor__ = "Daniel Felipe Duque Lizarralde"

@@ -8,6 +8,23 @@
 
 ---
 
+## [v4.1.0a1] - 2026-11-13: Fase B1 — Esquema SQLite v2, Repositorios de Control/Calibración e Ingesta Universal de 4 Familias
+
+### 1. Hitos Estructurales Implementados (Ver [REP-002](DEVELOP/reportes/REP-002_fase_b1_esquema_v2_e_ingesta_universal.md))
+- **Migración SQLite `v1 -> v2` (`aquaterra/infrastructure/db/esquema.py`):**
+  Incorporación de `_MIGRACION_002` (`VERSION_ESQUEMA = 2`) con 7 tablas nuevas: `eventos_estacion`, `calibraciones_nodo`, `salud_actuadores_log`, `incidencia_riego`, `riegos_programados`, `pronostico_clima_cache` y `conversaciones_copiloto`.
+- **Nuevas Entidades de Dominio (`aquaterra/core/domain/`) y Repositorios (`repositorios.py`):**
+  4 `StrEnum` (`ModoVerificacionRiego`, `DiagnosticoMecanicoBomba`, `EfectividadRiego`, `EstadoRiegoProgramado`), 7 `dataclass` inmutables y 7 repositorios incluyendo `RepositorioCalibraciones` con versionado histórico y *rollback* en un paso (`restaurar_version()`).
+- **Ingesta Universal de 4 Familias (`aquaterra/infrastructure/iot_ingest/adaptadores.py`):**
+  - **Sigatoka:** Nuevo `parsear_csv_sigatoka()` con autodetección entre `/MUNDONUEVO.csv` (con cabecera) y `/buffer_sigatoka.json` (sin cabecera), derivación de `hoja_humectada` ($\ge 70\%$), rosa de vientos en grados + `EventoEstacion(tipo_evento="direccion_viento")` y cálculo de $VPD$.
+  - **Conservación & Páramos:** Nuevo `parsear_csv_conservacion()` para `nivel_freatico_cm`, turberas y microclima altoandino.
+  - **TerraBit Nodo INTI & InBeersa:** Soporte para telemetría hidromecánica (`VibracionRMS`, `VibracionFreq`, `CorrienteBomba`, `CaudalLPM`, `AperturaValvula`), campos del struct `TelemetriaInBeersa` y cálculo automático de `vpd` y `delta_temp`.
+  - **Guardia Temporal RTC:** Marcado automático `calidad = 2` para lecturas anteriores a `EPOCH_MINIMO_VALIDO = 1_704_067_200` (`2024-01-01`).
+- **Verificación Automatizada:**
+  Suite de **57 pruebas en `pytest`** (`0 warnings`) y **`ruff check .`** (`All checks passed!`).
+
+---
+
 ## [v4.0.0a1] - 2026-11-13: Fase 1 — Re-Arquitectura en 4 Capas, Motor SQLite WAL, Ingesta IoT y Cierre de Deuda Técnica
 
 ### 1. Hitos Estructurales Implementados (Ver [REP-001](DEVELOP/reportes/REP-001_arquitectura_v4_y_resolucion_deuda_tecnica.md))
