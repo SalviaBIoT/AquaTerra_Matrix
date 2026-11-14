@@ -15,13 +15,15 @@ Esta carpeta (`DEVELOP/`) es la **bitácora viva de arquitectura, mejoras, decis
 DEVELOP/
 ├── README.md                                                    # Este índice maestro de trazabilidad
 ├── ARQUITECTURA_MAESTRA_BRUJULA.md                              # Brújula Maestra v4.0 -> v5.0 (Variables, Riesgos y Backend)
+├── GUIA_INTEGRACION_IA_AISTUDIO_Y_OLLAMA.md                     # Manual 0 a 100 para conectar Gemini AI Studio y Ollama Local
 ├── reportes/                                                    # Reportes paso a paso de cada fase ejecutada
 │   ├── REP-000_migracion_semilla_y_entorno.md                   # Fase 0: Semilla v3.2, Git, .venv y diagnóstico
 │   ├── REP-001_arquitectura_v4_y_resolucion_deuda_tecnica.md    # Fase 1: Arquitectura 4 capas, SQLite WAL y DT-01..05
 │   ├── REP-002_fase_b1_esquema_v2_e_ingesta_universal.md        # Fase B1: Esquema v2 (7 tablas) e ingesta 4 familias
 │   ├── REP-003_fase_b2_motor_analitico_ventana_movil_y_pulso_24h.md # Fase B2: Analítica, ventana móvil SQLite y Pulso 24h
 │   ├── REP-004_fase_b3_enclavamientos_salud_bomba_e_incidencia_riego.md # Fase B3: 5 candados, salud bomba e incidencia riego
-│   └── REP-005_fase_b4_exportador_xlsx_y_radar_estaciones.md    # Fase B4: Exportador .xlsx multi-hoja y Radar de Nodos
+│   ├── REP-005_fase_b4_exportador_xlsx_y_radar_estaciones.md    # Fase B4: Exportador .xlsx multi-hoja y Radar de Nodos
+│   └── REP-006_fase_b5_orquestador_ia_y_copiloto_calibracion.md # Fase B5: Orquestador IA híbrido, Copiloto, Rollback y RTC
 ├── decisiones/                                                  # Architecture Decision Records (ADRs)
 │   ├── ADR-001_sqlite_wal_y_retiro_pandas_runtime.md            # Motor SQLite3 WAL y esquema relacional
 │   ├── ADR-002_arquitectura_capas_y_contenedor.md               # Separación Core / Application / Infra / UI
@@ -60,3 +62,4 @@ DEVELOP/
 | **[REP-003](reportes/REP-003_fase_b2_motor_analitico_ventana_movil_y_pulso_24h.md)** | `2026-11-13` | `v4.1.0a2` | Fase B2 — Motor Analítico, Ventana Móvil SQLite y Pulso 24h | Implementación de `aquaterra/core/analitica/` (ventana móvil, tasa de secado OLS $\Delta\theta/\Delta t$, correlación de Pearson $r$, rumbo circular $\operatorname{atan2}$ y Pulso 24h para las 4 familias), Window Functions SQLite3, `NodePulseService` y suite de 64 pruebas en verde. |
 | **[REP-004](reportes/REP-004_fase_b3_enclavamientos_salud_bomba_e_incidencia_riego.md)** | `2026-11-13` | `v4.1.0a3` | Fase B3 — Enclavamientos Duros, Salud de Bomba e Incidencia de Riego | Implementación modular de `aquaterra/core/control/` (`SafetyInterlockEngine` de 5 candados, clasificador de bomba con modo `SIN_SENSOR_ACTUADOR` hoy y vibración/caudal a futuro, evaluador $\Delta\theta_A/\Delta\theta_B$ y planificador proactivo), `DecisionAndControlService` y suite de 68 pruebas en verde. |
 | **[REP-005](reportes/REP-005_fase_b4_exportador_xlsx_y_radar_estaciones.md)** | `2026-11-13` | `v4.1.0a4` | Fase B4 — Exportador Ejecutivo `.xlsx` Multi-Hoja y Radar de Estaciones | Implementación de `aquaterra/infrastructure/exportacion/` (libros `.xlsx` de 3 hojas con stdlib y `.csv` ancho), `StationDiscoveryService` (radar priorizado por severidad, buscador por parcela/tipo y detector/importador MicroSD), `AnalyticsAndExportService` y suite de 71 pruebas en verde. |
+| **[REP-006](reportes/REP-006_fase_b5_orquestador_ia_y_copiloto_calibracion.md)** | `2026-11-13` | `v4.1.0` | Fase B5 — Orquestador IA Híbrido, Copiloto de Calibración, Rollback y Mejoras IoT | Implementación de `aquaterra/core/copiloto/` (cotas físicas anti-alucinación, `AsesorDeterministaCopiloto`, contratos JSON Schema), `aquaterra/infrastructure/ia/` (`ClienteGeminiAIStudio`, `ClienteOllamaLocal`, `OrquestadorIA`), `CalibrationCopilotService` (aplicación y rollback en 1 clic + exportador `.jsonl`), reparación RTC (`calidad=2`), sincronización automática de humedad en parcelas y suite de 78 pruebas en verde. |
