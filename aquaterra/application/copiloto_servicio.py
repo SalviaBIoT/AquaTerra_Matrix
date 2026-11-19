@@ -30,7 +30,7 @@ from aquaterra.core.control.enclavamientos import (
 from aquaterra.core.copiloto.contratos_ia import (
     ContextoDiagnosticoCopiloto,
     PropuestaCopiloto,
-    construir_system_instruction_terrabit,
+    construir_system_instruction_salviabiot,
 )
 from aquaterra.core.copiloto.cotas_calibracion import (
     PARAMETROS_CALIBRACION_POR_DEFECTO,
@@ -528,7 +528,7 @@ class CalibrationCopilotService:
         ruta.parent.mkdir(parents=True, exist_ok=True)
 
         interacciones = self._copiloto_repo.listar()
-        instruccion_sistema = construir_system_instruction_terrabit()
+        instruccion_sistema = construir_system_instruction_salviabiot()
         exportadas = 0
 
         with ruta.open("w", encoding="utf-8") as fh:

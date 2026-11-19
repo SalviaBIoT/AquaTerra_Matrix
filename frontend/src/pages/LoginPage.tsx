@@ -1,13 +1,13 @@
 import { useState, type FormEvent } from "react";
 import {
   AlertCircle,
-  Droplets,
   Eye,
   EyeOff,
   Loader2,
   Moon,
   Radio,
   ShieldCheck,
+  Sprout,
   Sun,
   WifiOff,
 } from "lucide-react";
@@ -53,7 +53,7 @@ export function LoginPage() {
         setErrorBanner(err.detail);
       } else {
         setErrorBanner(
-          "No se pudo conectar con el servidor local de AquaTerra Matrix."
+          "No se pudo conectar con el servidor local de SalviaBIoT."
         );
       }
     } finally {
@@ -82,26 +82,27 @@ export function LoginPage() {
         <div className="relative z-10 flex items-center justify-between">
           <div className="inline-flex items-center gap-2.5 rounded-full border border-white/15 bg-black/40 px-3.5 py-1.5 backdrop-blur-md">
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-400/20 text-emerald-300">
-              <Droplets className="h-3.5 w-3.5" aria-hidden="true" />
+              <Sprout className="h-3.5 w-3.5" aria-hidden="true" />
             </span>
-            <span className="text-xs font-semibold tracking-wide text-white">
-              AQUATERRA MATRIX · v6.0
+            <span className="text-xs font-extrabold tracking-wide text-white">
+              SALVIA<span className="text-emerald-400">BIoT</span>{" "}
+              <span className="font-mono font-semibold text-white/80">· v6.0</span>
             </span>
           </div>
 
           <span className="hidden rounded-full border border-emerald-400/25 bg-emerald-500/10 px-3 py-1 font-mono text-[11px] text-emerald-200 backdrop-blur-md sm:inline-flex">
-            UTP · Ecosistema TerraBit
+            Biological Internet of Things
           </span>
         </div>
 
         <div className="relative z-10 my-auto max-w-xl py-8 lg:py-0">
           <h1 className="text-2xl font-bold tracking-tight text-white sm:text-4xl lg:text-[2.65rem] lg:leading-[1.12]">
-            Telemetría Bio-Física y Control Hidráulico de Precisión
+            Telemetría Biológica &amp; Inteligencia Ambiental de Precisión
           </h1>
           <p className="mt-4 max-w-lg text-sm leading-relaxed text-emerald-50/80 sm:text-base">
-            Plataforma unificada de monitoreo agrometeorológico, ingesta de
-            nodos nRF24L01+ / LoRa y actuación hidráulica con verificación física
-            en tiempo real.
+            Infraestructura Local-First para escuchar, interpretar y proteger
+            ecosistemas vivos y cultivos regenerativos mediante estaciones de
+            campo, analítica bio-física y actuación hidráulica verificada.
           </p>
 
           <div className="mt-7 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -117,10 +118,10 @@ export function LoginPage() {
             <div className="rounded-xl border border-white/12 bg-black/40 p-3.5 backdrop-blur-md">
               <div className="flex items-center gap-2 text-xs font-semibold text-emerald-300">
                 <Radio className="h-4 w-4 shrink-0" aria-hidden="true" />
-                4 Familias IoT
+                4 Líneas Bio-IoT
               </div>
               <p className="mt-1 text-xs text-white/70">
-                TerraBit INTI, InBeersa, Sigatoka y Conservación de Páramos.
+                TerraBit Station, InBeersa, Sigatoka y Conservación de Páramos.
               </p>
             </div>
             <div className="rounded-xl border border-white/12 bg-black/40 p-3.5 backdrop-blur-md">
@@ -129,15 +130,15 @@ export function LoginPage() {
                 Rural Offline-First
               </div>
               <p className="mt-1 text-xs text-white/70">
-                SQLite WAL local, importación MicroSD e IA híbrida resiliente.
+                SQLite WAL local, importación MicroSD e IA modular resiliente.
               </p>
             </div>
           </div>
         </div>
 
         <footer className="relative z-10 text-xs text-white/60">
-          Ingeniería Agronómica &amp; Bio-IoT · Universidad Tecnológica de
-          Pereira
+          SalviaBIoT · Reciprocidad Tecnológica &amp; Conservación · Pereira,
+          Colombia
         </footer>
       </aside>
 
@@ -168,14 +169,14 @@ export function LoginPage() {
         <div className="mx-auto w-full max-w-sm">
           <div className="mb-8">
             <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--accent-primary-soft)] text-[var(--accent-primary)]">
-              <Droplets className="h-5 w-5" aria-hidden="true" />
+              <Sprout className="h-5 w-5" aria-hidden="true" />
             </div>
             <h2 className="mt-5 text-2xl font-bold tracking-tight text-[var(--text-primary)]">
-              Acceso al Centro de Operaciones
+              Acceso a Salvia<span className="text-[var(--accent-primary)]">BIoT</span>
             </h2>
             <p className="mt-1.5 text-sm text-[var(--text-secondary)]">
-              Inicia sesión con tu cuenta operativa para gestionar estaciones,
-              parcelas y actuadores.
+              Inicia sesión con tu cuenta operativa para gestionar estaciones
+              TerraBit Station, ecosistemas, parcelas y actuadores.
             </p>
           </div>
 

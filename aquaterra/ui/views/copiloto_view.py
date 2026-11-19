@@ -363,7 +363,7 @@ class VistaCopiloto(ttk.Frame):
             parent=self,
             title="Exportar Dataset SFT (.jsonl)",
             defaultextension=".jsonl",
-            initialfile="aquaterra_copiloto_sft.jsonl",
+            initialfile="salviabiot_mandarino_sft.jsonl",
             filetypes=[("JSON Lines", "*.jsonl")],
         )
         if not ruta:

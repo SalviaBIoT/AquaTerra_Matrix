@@ -1,7 +1,7 @@
 {
-  "name": "AquaTerra Matrix",
-  "short_name": "AquaTerra",
-  "description": "Telemetría Bio-Física, Radar de Estaciones TerraBit y Control Hidráulico de Precisión.",
+  "name": "SalviaBIoT",
+  "short_name": "SalviaBIoT",
+  "description": "Infraestructura de telemetría biológica, radar de estaciones TerraBit Station y control hidráulico de precisión.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

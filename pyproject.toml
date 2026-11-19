@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "aquaterra-matrix"
 version = "6.0.0"
-description = "Software Matriz de Administración Ecológica, Agrícola y Bio-IoT (Ecosistema TerraBit & Conservación)"
+description = "SalviaBIoT — Plataforma de Telemetría Biológica, Inteligencia Ambiental y Control Bio-IoT"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [

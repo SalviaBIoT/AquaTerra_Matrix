@@ -1,4 +1,4 @@
-"""Punto de entrada de AquaTerra Matrix.
+"""Punto de entrada de SalviaBIoT (legacy Tkinter / PyWebView con -m aquaterra).
 
 Uso:
     .\\.venv\\Scripts\\python.exe main.py

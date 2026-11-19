@@ -45,7 +45,7 @@ def crear_app(
             app.state.contenedor.cerrar()
 
     app = FastAPI(
-        title="AquaTerra Matrix Local API",
+        title="SalviaBIoT Local API",
         version=__version__,
         lifespan=lifespan,
     )

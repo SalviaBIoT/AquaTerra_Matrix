@@ -1,6 +1,6 @@
 """Motor determinista de diagnóstico y recalibración (`RuleBasedAdvisor`).
 
-Garantiza que `AquaTerra Matrix` pueda diagnosticar riegos, analizar el pulso de
+Garantiza que `SalviaBIoT` pueda diagnosticar riegos, analizar el pulso de
 cualquier familia de estación (`INTI`, `InBeersa`, `Sigatoka`, `Conservación`) y
 proponer ajustes de calibración con latencia cero y 100 % offline en campo
 (páramos o fincas sin conectividad), además de servir como respaldo automático
@@ -165,7 +165,7 @@ class AsesorDeterministaCopiloto:
         if pulso is not None and pulso.alertas_detectadas:
             primera = pulso.alertas_detectadas[0]
             msg = (
-                f"¡Hola! Soy Mandarino, tu copiloto Bio-IoT en AquaTerra Matrix. "
+                f"¡Hola! Soy Mandarino, tu copiloto Bio-IoT en SalviaBIoT. "
                 f"Estoy en línea siguiendo a {pulso.nombre_estacion} y detecté una novedad activa: "
                 f"{primera}. Si quieres, la analizamos juntos o revisamos si conviene ajustar umbrales."
             )
@@ -177,7 +177,7 @@ class AsesorDeterministaCopiloto:
                     resumen_vars.append(f"{clave}: {est.ultimo_valor:.1f}")
             contexto_txt = f" ({' · '.join(resumen_vars[:3])})" if resumen_vars else ""
             msg = (
-                f"¡Hola! Soy Mandarino, tu copiloto agronómico y Bio-IoT. "
+                f"¡Hola! Soy Mandarino, tu copiloto ambiental y Bio-IoT en SalviaBIoT. "
                 f"Veo a {pulso.nombre_estacion} operando en estado "
                 f"{pulso.severidad.value}{contexto_txt}. Puedo explicarte variables de "
                 "telemetría, revisar alertas de tus nodos o auditar cambios seguros. "
@@ -192,20 +192,20 @@ class AsesorDeterministaCopiloto:
                 alertas_n = foco.get("alertas") or []
                 detalle = f": {alertas_n[0]}" if alertas_n else ""
                 msg = (
-                    f"¡Hola! Soy Mandarino, tu copiloto Bio-IoT en AquaTerra Matrix. "
+                    f"¡Hola! Soy Mandarino, tu copiloto Bio-IoT en SalviaBIoT. "
                     f"Revisando todo tu ecosistema detecté prioridad en {foco.get('nombre')}{detalle}. "
                     "Puedes abrir esa estación en el panel izquierdo o preguntarme por cualquier nodo."
                 )
             else:
                 msg = (
-                    f"¡Hola! Soy Mandarino, tu copiloto inteligente en AquaTerra Matrix. "
+                    f"¡Hola! Soy Mandarino, tu copiloto inteligente en SalviaBIoT. "
                     f"Veo {len(ctx.panorama_ecosistema)} estación(es) activas operando en rango normal. "
                     "Elige una estación a la izquierda para profundizar o pregúntame lo que necesites."
                 )
         else:
             msg = (
-                "¡Hola! Soy Mandarino, tu copiloto inteligente del ecosistema TerraBit. "
-                "Puedo diagnosticar estaciones, interpretar tendencias hídricas o térmicas "
+                "¡Hola! Soy Mandarino, tu copiloto inteligente del ecosistema SalviaBIoT. "
+                "Puedo diagnosticar estaciones TerraBit, interpretar tendencias hídricas o térmicas "
                 "y auditar calibraciones seguras. ¿Qué nodo te gustaría revisar hoy?"
             )
         return PropuestaCopiloto(

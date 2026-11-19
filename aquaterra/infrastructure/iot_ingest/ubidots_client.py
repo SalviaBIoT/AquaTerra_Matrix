@@ -1,6 +1,6 @@
 """Cliente HTTP incremental para Ubidots Industrial REST API (`v1.6` / `v2.0`).
 
-Permite que `AquaTerra Matrix` actúe como historiador maestro local de las
+Permite que `SalviaBIoT` actúe como historiador maestro local de las
 estaciones ESP32 que transmiten por WiFi/SIM a Ubidots (`terrabit-nodointi`,
 `inbeersa-nodo01`, etc.):
 1. Consulta en SQLite la marca de agua `RepositorioLecturas.ultimo_epoch(estacion_id)`.

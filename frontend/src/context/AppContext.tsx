@@ -167,9 +167,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Actualizar <title> por vista para navegación accesible
   useEffect(() => {
     if (!usuario) {
-      document.title = "Iniciar Sesión · AquaTerra Matrix";
+      document.title = "Iniciar Sesión · SalviaBIoT";
     } else {
-      document.title = `${TITULOS_VISTA[vistaActiva]} · AquaTerra Matrix`;
+      document.title = `${TITULOS_VISTA[vistaActiva]} · SalviaBIoT`;
     }
   }, [usuario, vistaActiva]);
 

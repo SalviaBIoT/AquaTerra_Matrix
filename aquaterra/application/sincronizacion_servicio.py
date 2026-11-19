@@ -1,7 +1,7 @@
 """Servicio de Sincronización Activa (Ubidots REST, Open-Meteo, Gateway nRF24L01+/LoRa y Notificaciones).
 
 Orquesta en el Sprint `v4.2.0`:
-1. Registro automático de las estaciones reales del Ecosistema TerraBit en Ubidots
+1. Registro automático de las estaciones base reales del Ecosistema SalviaBIoT en Ubidots
    (`terrabit-nodointi` e `inbeersa-nodo01` en UTP Pereira `4.7905° N, -75.6904° O`).
 2. Descarga incremental desde Ubidots REST API usando `ultimo_epoch(estacion_id)`
    como marca de agua y actualización automática de `parcelas.humedad_pct`.

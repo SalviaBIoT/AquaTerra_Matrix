@@ -345,7 +345,7 @@ export function SettingsPage() {
                   </h2>
                 </div>
                 <p className="mt-1 text-xs text-[var(--text-secondary)]">
-                  Por defecto AquaTerra sigue la preferencia de Windows/SO, o
+                  Por defecto SalviaBIoT sigue la preferencia de Windows/SO, o
                   puedes fijar un esquema para operación nocturna o campo abierto.
                 </p>
 
@@ -692,7 +692,7 @@ export function SettingsPage() {
                     className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 py-1.5 text-xs font-semibold text-[var(--text-primary)]"
                   >
                     <Radio className="h-3.5 w-3.5 text-[var(--accent-primary)]" aria-hidden="true" />
-                    Sembrar base TerraBit
+                    Sembrar estaciones base
                   </button>
                 </div>
 
@@ -721,7 +721,7 @@ export function SettingsPage() {
                     aria-label="Familia de estación"
                     className="h-10 rounded-xl border border-[var(--border-strong)] bg-[var(--bg-canvas)] px-3 text-xs"
                   >
-                    <option value="terrabit_inti">TerraBit INTI</option>
+                    <option value="terrabit_inti">TerraBit Station · INTI</option>
                     <option value="inbeersa">InBeersa Meliponas</option>
                     <option value="sigatoka">Sigatoka Foliar</option>
                     <option value="conservacion">Conservación Páramo</option>

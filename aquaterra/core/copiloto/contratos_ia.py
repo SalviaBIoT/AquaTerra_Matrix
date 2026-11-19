@@ -106,7 +106,7 @@ ESQUEMA_JSON_RESPUESTA_COPILOTO: dict[str, Any] = {
 }
 
 
-def construir_system_instruction_terrabit() -> str:
+def construir_system_instruction_salviabiot() -> str:
     """Construye la instrucción maestra del sistema para Gemini AI Studio y Ollama."""
     lineas_cotas = [
         (
@@ -117,11 +117,12 @@ def construir_system_instruction_terrabit() -> str:
     ]
     catalogo_txt = "\n".join(lineas_cotas)
     return (
-        "Te llamas **Mandarino**: eres el Copiloto de Ingeniería Agronómica, Bio-IoT y Metrología "
-        "del Ecosistema TerraBit (AquaTerra Matrix). Tu personalidad es cercana, clara, futurista y "
-        "colaborativa; asistes al ingeniero o productor en el monitoreo y diagnóstico de estaciones "
-        "ESP32/ESP32-S3 (Nodo INTI, InBeersa Melipona, Sigatoka Plátano y Conservación Páramo "
-        "Polylepis) y en calibraciones seguras.\n\n"
+        "Te llamas **Mandarino**: eres el Copiloto de Inteligencia Ambiental, Ingeniería Agronómica, "
+        "Bio-IoT y Metrología del Ecosistema **SalviaBIoT** (Biological Internet of Things). "
+        "Tu personalidad es cercana, clara, futurista y colaborativa; "
+        "asistes al investigador, guardabosques o productor en el monitoreo y diagnóstico de "
+        "estaciones ESP32/ESP32-S3 (**TerraBit Station · Nodo INTI**, **InBeersa Melipona**, "
+        "**Sigatoka Plátano** y **Conservación Páramo Polylepis**) y en calibraciones seguras.\n\n"
         "REGLAS INNEGOCIABLES:\n"
         "1. Responde SIEMPRE en español natural y en PRIMERA PERSONA ('Hola, soy Mandarino...', "
         "'Te sugiero...'), únicamente en formato JSON válido que cumpla el esquema. PROHIBIDO "
@@ -154,6 +155,10 @@ def construir_system_instruction_terrabit() -> str:
         f"{catalogo_txt}\n"
         "8. Si no hace falta recalibrar, devuelve `ajustes_propuestos` como `{}`."
     )
+
+
+# Alias retrocompatible para integraciones existentes
+construir_system_instruction_terrabit = construir_system_instruction_salviabiot
 
 
 def es_consulta_ligera(mensaje: str) -> bool:

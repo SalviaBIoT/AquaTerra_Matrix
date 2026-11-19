@@ -1,15 +1,16 @@
-# AquaTerra Matrix
+# SalviaBIoT
 
-Plataforma **Local-First** de monitoreo agroecológico, control de riego con enclavamientos físicos de seguridad y diagnóstico asistido por IA (**Mandarino IA Studio**) para redes de sensores ESP32 / Bio-IoT.
+Plataforma **Local-First** de telemetría biológica, inteligencia ambiental, control hidráulico con enclavamientos físicos de seguridad y diagnóstico asistido por IA (**Mandarino IA Studio**) para redes de sensores ESP32 / Bio-IoT.
 
-> **Ecosistema TerraBit & Conservación** · Universidad Tecnológica de Pereira (UTP) — Semilleros Kilby & MUCEM  
-> **Autor:** Daniel Felipe Duque Lizarralde
+> **Ecosistema SalviaBIoT (*Biological Internet of Things*)** · Conservación & Agricultura Regenerativa de Precisión  
+> **Arquitectura de Producto:** **TerraBit Station** (Capa 1 · Hardware de Campo) → **Mandarino IA** *(motor cognitivo provisional rumbo a Savia + Mandarín)*  
+> **Autor y Arquitecto:** Daniel Felipe Duque Lizarralde · Pereira, Colombia
 
 ---
 
-## Ecosistemas Soportados
+## Estaciones y Líneas Bio-IoT Soportadas
 
-- **TerraBit Nodo INTI:** Humedad edáfica capacitiva (calibrada + EMA), temperatura radicular DS18B20, presión/temperatura/humedad ambiental, VPD psicrométrico (Tetens FAO-56) y gestión energética.
+- **TerraBit Station (Nodo INTI):** Estación edafoclimática autónoma — humedad capacitiva del suelo (calibrada + EMA), temperatura radicular DS18B20, presión/temperatura/humedad ambiental, VPD psicrométrico (Tetens FAO-56) y gestión energética.
 - **InBeersa (*Melipona eburnea*):** Homeostasis térmica/higrométrica interna y externa de colmenas, calidad de aire (`CO2/VOCs`) y trazabilidad de eventos bioacústicos I2S.
 - **Sigatoka:** Vigilancia microclimática foliar y humedad de hoja para alerta temprana fitosanitaria.
 - **Conservación & Páramos (*Polylepis*):** Series temporales hidro-ecológicas de alta montaña preparadas para operación intermitente / offline.
@@ -30,7 +31,7 @@ Plataforma **Local-First** de monitoreo agroecológico, control de riego con enc
 ## Arquitectura del Proyecto
 
 ```text
-AquaTerra_Matrix/
+SalviaBIoT_Platform/
 ├── aquaterra/
 │   ├── core/             # Dominio, psicrometría VPD, analítica OLS/Pearson, candados y contratos IA
 │   ├── application/      # Casos de uso, pulso 24h, control de riego, sync híbrida y Copiloto
@@ -53,7 +54,7 @@ AquaTerra_Matrix/
 ### 1. Entorno Python y Backend
 
 ```bash
-git clone https://github.com/dfelipeduquel/AquaTerra_Matrix.git
+git clone https://github.com/SalviaBIoT/AquaTerra_Matrix.git
 cd AquaTerra_Matrix
 
 python -m venv .venv
@@ -90,7 +91,7 @@ python main.py
 python main.py --web
 ```
 
-> En el primer arranque sin usuarios configurados, AquaTerra siembra la base SQLite local en `data/runtime/aquaterra.db`. Accede con tu usuario operativo y gestiona credenciales/roles desde **Configuración**.
+> En el primer arranque sin usuarios configurados, SalviaBIoT siembra la base SQLite local en `data/runtime/aquaterra.db` (ruta retrocompatible). Accede con tu usuario operativo y gestiona credenciales/roles desde **Configuración**.
 
 ---
 

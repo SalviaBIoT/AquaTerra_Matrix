@@ -79,7 +79,7 @@ class VistaDashboard(ttk.Frame):
             kpi_fila.columnconfigure(i, weight=1)
 
         c1, self.lbl_kpi_estaciones, self.lbl_kpi_estaciones_sub = crear_tarjeta_kpi(
-            kpi_fila, "Nodos TerraBit", "0", "Estaciones registradas", bootstyle="primary"
+            kpi_fila, "Estaciones SalviaBIoT", "0", "Estaciones registradas", bootstyle="primary"
         )
         c1.grid(row=0, column=0, sticky="nsew", padx=(0, 6))
 
@@ -118,7 +118,7 @@ class VistaDashboard(ttk.Frame):
         barra_radar.pack(fill=X, pady=(0, 8))
         ttk.Button(
             barra_radar,
-            text="🌱 Sembrar Nodos TerraBit Base",
+            text="🌱 Sembrar Estaciones Base",
             bootstyle="success-outline",
             command=self._sembrar_nodos_base,
         ).pack(side=LEFT, padx=(0, 6))
@@ -284,7 +284,7 @@ class VistaDashboard(ttk.Frame):
             self.lbl_kpi_clima.configure(text="0.0 mm")
             self.lbl_kpi_clima_sub.configure(text="Sin estación activa")
             self.var_narrativa.set(
-                "No hay estaciones registradas aún. Pulse '🌱 Sembrar Nodos TerraBit Base' para crear "
+                "No hay estaciones registradas aún. Pulse '🌱 Sembrar Estaciones Base' para crear "
                 "terrabit-nodointi e inbeersa-nodo01 (UTP Pereira), o importe un CSV/JSONL en Hardware."
             )
             return
@@ -360,7 +360,7 @@ class VistaDashboard(ttk.Frame):
         )
         if estaciones is not None:
             self.app.notificar_cambio_datos(
-                f"🌱 Nodos TerraBit base asegurados ({len(estaciones)} estaciones UTP Pereira)",
+                f"🌱 Estaciones base SalviaBIoT aseguradas ({len(estaciones)} estaciones UTP Pereira)",
                 bootstyle="success",
             )
             self.refrescar()

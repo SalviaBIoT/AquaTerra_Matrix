@@ -1,6 +1,6 @@
-"""AquaTerra Matrix — Software Matriz de Administración Ecológica, Agrícola y Bio-IoT.
+"""SalviaBIoT — Plataforma de Telemetría Biológica, Inteligencia Ambiental y Control Bio-IoT.
 
-Ecosistema TerraBit (Nodo INTI, InBeersa, Sigatoka, Conservación Polylepis).
+Ecosistema SalviaBIoT (Estaciones TerraBit Station / Nodo INTI, InBeersa, Sigatoka, Conservación Polylepis).
 Autor y arquitecto: Daniel Felipe Duque Lizarralde.
 
 Arquitectura por capas (dependencias apuntan siempre hacia adentro):

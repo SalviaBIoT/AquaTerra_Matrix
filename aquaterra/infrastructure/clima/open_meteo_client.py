@@ -124,7 +124,7 @@ class ClienteOpenMeteo:
         url = f"{self._base_url}?{urllib.parse.urlencode(params)}"
         req = urllib.request.Request(
             url,
-            headers={"Accept": "application/json", "User-Agent": "AquaTerraMatrix/4.2"},
+            headers={"Accept": "application/json", "User-Agent": "SalviaBIoT/6.0"},
             method="GET",
         )
         with urllib.request.urlopen(req, timeout=self._timeout) as resp:

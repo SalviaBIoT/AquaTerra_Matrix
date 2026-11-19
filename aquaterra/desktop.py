@@ -1,8 +1,9 @@
-"""Lanzador unificado de AquaTerra Matrix v6.0 (PyWebView nativo, ``--web`` o ``--legacy-ui``)."""
+"""Lanzador unificado de SalviaBIoT v6.0 (PyWebView nativo, ``--web`` o ``--legacy-ui``)."""
 
 from __future__ import annotations
 
 import argparse
+import contextlib
 import os
 import socket
 import sys
@@ -100,7 +101,7 @@ class ServidorLocalEmbebido:
 def parsear_argumentos(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="aquaterra",
-        description=f"AquaTerra Matrix v{__version__} · Telemetría y Control Hidráulico",
+        description=f"SalviaBIoT v{__version__} · Telemetría Biológica y Control Hidráulico",
     )
     parser.add_argument(
         "--web",
@@ -131,15 +132,28 @@ def parsear_argumentos(argv: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+def _configurar_app_id_windows() -> None:
+    """Asigna AppUserModelID propio para que Windows muestre el ícono de SalviaBIoT en la barra de tareas."""
+    if sys.platform == "win32":
+        with contextlib.suppress(Exception):
+            import ctypes
+
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("SalviaBIoT.Desktop.v6")
+
+
 def _ejecutar_pywebview(url_base: str) -> None:
     import webview  # import perezoso para no requerir GUI en pruebas headless
 
-    icono = RAIZ_RECURSOS / "aquaterra" / "ui" / "assets" / "aquaterra.ico"
+    _configurar_app_id_windows()
+    assets = RAIZ_RECURSOS / "aquaterra" / "ui" / "assets"
+    icono = assets / "salviabiot.ico"
+    if not icono.is_file():
+        icono = assets / "aquaterra.ico"
     perfil = RAIZ_PROYECTO / "data" / "runtime" / "webview_profile"
     perfil.mkdir(parents=True, exist_ok=True)
 
     webview.create_window(
-        title=f"AquaTerra Matrix v{__version__}",
+        title=f"SalviaBIoT v{__version__}",
         url=url_base,
         width=1380,
         height=860,
@@ -162,7 +176,7 @@ def _servidor_ya_activo(url_base: str) -> bool:
 
 
 def ejecutar(argv: list[str] | None = None) -> None:
-    """Punto de entrada principal de AquaTerra Matrix v6.0."""
+    """Punto de entrada principal de SalviaBIoT v6.0."""
     _asegurar_flujos_sin_consola()
     args = parsear_argumentos(argv)
 
@@ -187,14 +201,14 @@ def ejecutar(argv: list[str] | None = None) -> None:
         servidor.iniciar()
         contenedor.copiloto.orquestador.precalentar_ollama_async()
         if args.web:
-            print(f"AquaTerra Matrix v{__version__} disponible en {servidor.url_base}")
+            print(f"SalviaBIoT v{__version__} disponible en {servidor.url_base}")
             if not args.no_browser:
                 webbrowser.open(servidor.url_base)
             try:
                 while True:
                     time.sleep(0.5)
             except KeyboardInterrupt:
-                print("\nDeteniendo AquaTerra Matrix…")
+                print("\nDeteniendo SalviaBIoT…")
         else:
             _ejecutar_pywebview(servidor.url_base)
     finally:

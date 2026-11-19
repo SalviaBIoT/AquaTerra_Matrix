@@ -1,14 +1,14 @@
-# Checkpoint de Estado Actual — AquaTerra Matrix v6.0.0 (Cierre Etapa 1)
+# Checkpoint de Estado Actual — SalviaBIoT v6.0.1 (Transición Ecosistema SalviaBIoT)
 
-**Fecha de Checkpoint:** 2026-11-14  
-**Rama Activa / Remoto:** `develop` (`https://github.com/dfelipeduquel/AquaTerra_Matrix.git`)  
+**Fecha de Checkpoint:** 2026-11-18  
+**Rama Activa / Remoto:** `develop` / `main` (`https://github.com/SalviaBIoT/AquaTerra_Matrix.git`)  
 **Autor:** Daniel Felipe Duque Lizarralde  
 
 ---
 
 ## 1. Resumen Ejecutivo
 
-**AquaTerra Matrix** cierra su Etapa 1 convertido en una plataforma operativa **Local-First**, modular y desacoplada para monitoreo Bio-IoT, control seguro de riego y diagnóstico asistido por IA (**Mandarino IA Studio**). El sistema corre de forma nativa en Windows sobre **FastAPI + SQLite WAL + PyWebView + React 19 + TypeScript + Tailwind CSS v4**, sin depender de internet ni servicios de terceros para conservar trazabilidad completa en campo.
+**SalviaBIoT** (*Biological Internet of Things*) consolida su plataforma operativa **Local-First**, modular y desacoplada para telemetría biológica, inteligencia ambiental, control seguro de riego y diagnóstico asistido por IA (**Mandarino IA Studio**). El sistema corre de forma nativa en Windows sobre **FastAPI + SQLite WAL + PyWebView + React 19 + TypeScript + Tailwind CSS v4**, sin depender de internet ni servicios de terceros para conservar trazabilidad completa en campo.
 
 ---
 

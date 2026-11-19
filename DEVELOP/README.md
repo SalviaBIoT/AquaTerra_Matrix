@@ -1,6 +1,6 @@
-# Centro de Ingeniería (`DEVELOP/`) — AquaTerra Matrix
+# Centro de Ingeniería (`DEVELOP/`) — SalviaBIoT
 
-**Proyecto:** AquaTerra Matrix (`v6.0.0`) — Ecosistema TerraBit & Conservación  
+**Proyecto:** SalviaBIoT (`v6.0.1`) — Biological Internet of Things & TerraBit Station  
 **Autor y Arquitecto:** Daniel Felipe Duque Lizarralde  
 
 ---

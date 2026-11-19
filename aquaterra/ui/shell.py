@@ -1,4 +1,4 @@
-"""Marco de Mando Persistente (*App Shell*) para AquaTerra Matrix v5.0.
+"""Marco de Mando Persistente (*App Shell*) para SalviaBIoT v6.0.
 
 Unifica en una sola ventana raíz:
 1. ``Top Command Bar``: selector global de estación, búsqueda inteligente
@@ -144,7 +144,7 @@ class AppShell(ttk.Frame):
         self.footer.pack(side=BOTTOM, fill=X)
         self.lbl_footer_izq = ttk.Label(
             self.footer,
-            text=f"SQLite3 WAL · AquaTerra Matrix v{__version__}",
+            text=f"SQLite3 WAL · SalviaBIoT v{__version__}",
             font=("Segoe UI", 8),
             style="ShellStatus.TLabel",
         )
@@ -167,13 +167,13 @@ class AppShell(ttk.Frame):
 
         ttk.Label(
             self.sidebar,
-            text="AQUATERRA MATRIX",
+            text="SALVIABIOT",
             font=("Segoe UI", 12, "bold"),
             style="SidebarBrand.TLabel",
         ).pack(anchor=W, pady=(4, 0))
         ttk.Label(
             self.sidebar,
-            text="Ecosistema Bio-IoT TerraBit",
+            text="Biological Internet of Things",
             font=("Segoe UI", 8),
             style="SidebarMuted.TLabel",
         ).pack(anchor=W, pady=(0, 8))

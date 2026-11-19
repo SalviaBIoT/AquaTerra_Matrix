@@ -288,7 +288,7 @@ class VistaHardware(ttk.Frame):
         if not hallados:
             messagebox.showinfo(
                 "Escáner MicroSD",
-                "No se encontraron archivos CSV/JSONL reconocidos de TerraBit en la ruta indicada.",
+                "No se encontraron archivos CSV/JSONL reconocidos de estaciones SalviaBIoT en la ruta indicada.",
                 parent=self,
             )
 

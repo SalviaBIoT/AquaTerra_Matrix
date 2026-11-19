@@ -27,7 +27,7 @@ from aquaterra.core.copiloto.contratos_ia import (
     ContextoDiagnosticoCopiloto,
     PropuestaCopiloto,
     construir_prompt_contexto_copiloto,
-    construir_system_instruction_terrabit,
+    construir_system_instruction_salviabiot,
 )
 from aquaterra.core.copiloto.cotas_calibracion import (
     ResultadoAuditoriaCalibracion,
@@ -170,7 +170,7 @@ class ClienteGeminiAIStudio:
         if not self._api_key:
             raise RuntimeError("No se ha configurado GEMINI_API_KEY.")
 
-        system_instruction = construir_system_instruction_terrabit()
+        system_instruction = construir_system_instruction_salviabiot()
         prompt_usuario = construir_prompt_contexto_copiloto(ctx)
 
         # 1. Intentar con el SDK oficial moderno `google-genai` (>= 3.2.0) si está instalado
@@ -305,7 +305,7 @@ class ClienteOllamaLocal:
             {
                 "model": self._modelo,
                 "messages": [
-                    {"role": "system", "content": construir_system_instruction_terrabit()},
+                    {"role": "system", "content": construir_system_instruction_salviabiot()},
                     {"role": "user", "content": construir_prompt_contexto_copiloto(ctx)},
                 ],
                 "format": ESQUEMA_JSON_RESPUESTA_COPILOTO,

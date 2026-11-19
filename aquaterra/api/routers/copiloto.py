@@ -112,7 +112,7 @@ def exportar_dataset_jsonl(
     solo_con_ajustes: bool = False,
 ) -> Response:
     with tempfile.TemporaryDirectory() as tmpdir:
-        destino = Path(tmpdir) / "aquaterra_copiloto_sft.jsonl"
+        destino = Path(tmpdir) / "salviabiot_mandarino_sft.jsonl"
         total = contenedor.copiloto.exportar_dataset_entrenamiento_jsonl(
             destino, solo_con_ajustes=solo_con_ajustes
         )
@@ -121,7 +121,7 @@ def exportar_dataset_jsonl(
         content=contenido,
         media_type="application/x-ndjson; charset=utf-8",
         headers={
-            "Content-Disposition": 'attachment; filename="aquaterra_copiloto_sft.jsonl"',
+            "Content-Disposition": 'attachment; filename="salviabiot_mandarino_sft.jsonl"',
             "X-Ejemplos-Exportados": str(total),
         },
     )

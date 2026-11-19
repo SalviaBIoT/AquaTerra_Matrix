@@ -85,7 +85,7 @@ export function ProactiveBoundsPanel({
       const esGlobal = item.estacion_id === null;
       const clave = esGlobal ? "global" : `est-${item.estacion_id}`;
       const titulo = esGlobal
-        ? "Asistente Global TerraBit"
+        ? "Asistente Global SalviaBIoT"
         : nombrePorEstacion.get(item.estacion_id!) ??
           `Estación #${item.estacion_id}`;
       const canal: CanalChatId = esGlobal ? "general" : item.estacion_id!;
@@ -334,7 +334,7 @@ export function ProactiveBoundsPanel({
                 onClick={() =>
                   void descargarArchivo(
                     "/api/copiloto/dataset.jsonl",
-                    "aquaterra_mandarino_sft.jsonl"
+                    "salviabiot_mandarino_sft.jsonl"
                   ).then(() => toast.success("Dataset SFT .jsonl exportado."))
                 }
                 className="inline-flex items-center gap-1 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2.5 py-1.5 text-[11px] font-semibold text-[var(--text-primary)] hover:border-[#f5b041]/60"

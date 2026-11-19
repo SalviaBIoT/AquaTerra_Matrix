@@ -28,7 +28,7 @@ class AppErrorBoundary extends Component<
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error("Error inesperado en interfaz AquaTerra:", error, info);
+    console.error("Error inesperado en interfaz SalviaBIoT:", error, info);
   }
 
   render() {
@@ -85,7 +85,7 @@ function ContenidoAplicacion() {
           aria-hidden="true"
         />
         <span className="text-sm font-medium">
-          Inicializando AquaTerra Matrix…
+          Inicializando SalviaBIoT…
         </span>
       </div>
     );

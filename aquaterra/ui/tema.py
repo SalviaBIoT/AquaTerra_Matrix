@@ -1,4 +1,4 @@
-"""Sistema de Diseño Dual (*Obsidian Bio-Tech* / *Field Daylight*) para AquaTerra Matrix v5.0.
+"""Sistema de Diseño Dual (*Obsidian Bio-Tech* / *Field Daylight*) para SalviaBIoT v6.0.
 
 Registra dos definiciones de tema personalizadas en ``ttkbootstrap`` 2.x, provee
 la paleta semántica activa para widgets y figuras ``Matplotlib`` orientadas a

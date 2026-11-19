@@ -107,7 +107,7 @@ export function StationSidebar({
                       className="h-3.5 w-3.5 text-[#f5b041]"
                       aria-hidden="true"
                     />
-                    Asistente Global TerraBit
+                    Asistente Global SalviaBIoT
                   </span>
                   {(chatsPorCanal.general?.length ?? 0) > 0 && (
                     <span className="rounded-full bg-[#f97316] px-1.5 py-0.5 font-mono text-[10px] font-semibold text-white">

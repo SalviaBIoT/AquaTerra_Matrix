@@ -26,11 +26,11 @@ def test_fastapi_sirve_frontend_dist_y_protege_rutas_api(tmp_path: Path) -> None
             r_root = client.get("/")
             assert r_root.status_code == 200
             assert "text/html" in r_root.headers.get("content-type", "")
-            assert "AquaTerra Matrix" in r_root.text
+            assert "SalviaBIoT" in r_root.text
 
             r_spa = client.get("/telemetria")
             assert r_spa.status_code == 200
-            assert "AquaTerra Matrix" in r_spa.text
+            assert "SalviaBIoT" in r_spa.text
 
             r_api_404 = client.get("/api/no-existe-esta-ruta")
             assert r_api_404.status_code == 404

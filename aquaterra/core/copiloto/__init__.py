@@ -6,6 +6,7 @@ from aquaterra.core.copiloto.contratos_ia import (
     ContextoDiagnosticoCopiloto,
     PropuestaCopiloto,
     construir_prompt_contexto_copiloto,
+    construir_system_instruction_salviabiot,
     construir_system_instruction_terrabit,
 )
 from aquaterra.core.copiloto.cotas_calibracion import (
@@ -29,5 +30,6 @@ __all__ = [
     "ResultadoAuditoriaCalibracion",
     "auditar_y_acotar_ajustes",
     "construir_prompt_contexto_copiloto",
+    "construir_system_instruction_salviabiot",
     "construir_system_instruction_terrabit",
 ]

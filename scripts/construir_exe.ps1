@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-Empaqueta AquaTerra Matrix como ejecutable standalone de Windows (.exe) mediante PyInstaller.
+Empaqueta SalviaBIoT como ejecutable standalone de Windows (.exe) mediante PyInstaller.
 #>
 $ErrorActionPreference = "Stop"
 
@@ -8,7 +8,7 @@ $Raiz = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location $Raiz
 
 $Python = Join-Path $Raiz ".venv\Scripts\python.exe"
-$Icono = Join-Path $Raiz "aquaterra\ui\assets\aquaterra.ico"
+$Icono = Join-Path $Raiz "aquaterra\ui\assets\salviabiot.ico"
 $FrontendDir = Join-Path $Raiz "frontend"
 
 # 1. Asegurar iconos y build fresco de frontend/dist
@@ -37,7 +37,7 @@ if ($LASTEXITCODE -ne 0) {
     --clean `
     --onedir `
     --noconsole `
-    --name "AquaTerraMatrix" `
+    --name "SalviaBIoT" `
     --icon "$Icono" `
     --add-data "frontend/dist;frontend/dist" `
     --add-data "aquaterra/ui/assets;aquaterra/ui/assets" `
@@ -47,4 +47,4 @@ if ($LASTEXITCODE -ne 0) {
     main.py
 
 Write-Host ""
-Write-Host "Build finalizado: $Raiz\dist\AquaTerraMatrix\AquaTerraMatrix.exe" -ForegroundColor Green
+Write-Host "Build finalizado: $Raiz\dist\SalviaBIoT\SalviaBIoT.exe" -ForegroundColor Green

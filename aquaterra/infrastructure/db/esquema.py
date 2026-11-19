@@ -224,7 +224,7 @@ def aplicar_migraciones(conexion: sqlite3.Connection) -> int:
     if actual > VERSION_ESQUEMA:
         raise RuntimeError(
             f"La base está en v{actual} pero este software solo conoce hasta v{VERSION_ESQUEMA}. "
-            "Actualice AquaTerra Matrix antes de abrir esta base."
+            "Actualice SalviaBIoT antes de abrir esta base."
         )
     for numero in range(actual + 1, VERSION_ESQUEMA + 1):
         script = MIGRACIONES[numero - 1]

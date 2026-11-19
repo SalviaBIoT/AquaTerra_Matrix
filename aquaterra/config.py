@@ -62,7 +62,7 @@ def guardar_env_local(pares: dict[str, str], ruta_env: Path | None = None) -> Pa
         else:
             existentes.pop(k, None)
     lineas = [
-        "# Configuración local del cliente AquaTerra Matrix (NO subir a Git)",
+        "# Configuración local del cliente SalviaBIoT (NO subir a Git)",
         *(f"{k}={v}" for k, v in sorted(existentes.items())),
         "",
     ]

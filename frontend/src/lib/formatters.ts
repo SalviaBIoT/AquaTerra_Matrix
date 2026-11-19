@@ -3,7 +3,7 @@ import type { TipoEstacion } from "../types/aquaterra";
 export function etiquetarTipoEstacion(tipo: TipoEstacion | string): string {
   switch (String(tipo).toLowerCase()) {
     case "terrabit_inti":
-      return "TerraBit INTI";
+      return "TerraBit Station · INTI";
     case "inbeersa":
       return "InBeersa Meliponas";
     case "sigatoka":

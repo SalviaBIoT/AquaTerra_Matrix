@@ -44,6 +44,10 @@ class AplicacionMatrix:
         # arrancamos sobre "bootstrap-dark" y registramos inmediatamente `aquaterra-dark/light`.
         self.raiz = ttk.Window(themename="bootstrap-dark")
         try:
+            icono = contenedor.config.ruta_assets / "salviabiot.ico"
+            if icono.is_file():
+                with contextlib.suppress(Exception):
+                    self.raiz.iconbitmap(default=str(icono))
             registrar_temas_aquaterra(self.raiz.style)
             tema_inicial = contenedor.config.tema_ui
             if tema_inicial not in set(self.raiz.style.theme_names()):
@@ -81,7 +85,7 @@ class AplicacionMatrix:
             self._vista.destroy()
             self._vista = None
         self._ruta_actual = clave_ruta
-        self.raiz.title(f"{titulo} — AquaTerra Matrix v{__version__}")
+        self.raiz.title(f"{titulo} — SalviaBIoT v{__version__}")
         shell.marcar_vista_activa(clave_ruta)
         self._vista = fabrica(shell.workspace)
         self._vista.pack(fill=BOTH, expand=True)
@@ -97,7 +101,7 @@ class AplicacionMatrix:
             self._shell = None
 
         self._ruta_actual = "login"
-        self.raiz.title(f"Acceso — AquaTerra Matrix v{__version__}")
+        self.raiz.title(f"Acceso — SalviaBIoT v{__version__}")
         self.raiz.geometry("900x640")
         self.raiz.resizable(False, False)
         self._vista = VistaLogin(self.raiz, self)
@@ -260,4 +264,4 @@ def ejecutar() -> None:
         AplicacionMatrix(contenedor).ejecutar()
     finally:
         contenedor.cerrar()
-        log.info("AquaTerra Matrix cerrado limpiamente.")
+        log.info("SalviaBIoT cerrado limpiamente.")

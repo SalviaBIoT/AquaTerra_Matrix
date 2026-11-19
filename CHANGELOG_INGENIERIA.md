@@ -1,10 +1,20 @@
-# Bitácora Técnica de Ingeniería: AquaTerra Matrix (Python Architecture)
+# Bitácora Técnica de Ingeniería: SalviaBIoT (Python & React Architecture)
 
-**Proyecto:** Software Matriz de Administración Ecológica, Agrícola y Bio-IoT (Evolución de AquaUTP v3.2)  
-**Ecosistema:** TerraBit / InBeersa / Sigatoka / Conservación Polylepis (Semilleros Kilby & MUCEM — UTP)  
+**Proyecto:** Plataforma Central de Telemetría Biológica, Inteligencia Ambiental y Control Bio-IoT (Evolución de AquaUTP v3.2)  
+**Ecosistema:** SalviaBIoT — TerraBit Station (Nodo INTI) / InBeersa / Sigatoka / Conservación Polylepis  
 **Autor & Arquitecto Principal:** Daniel Felipe Duque Lizarralde  
 
 > **Nota de Trazabilidad:** El desglose exhaustivo de reportes paso a paso (`REP-XXX`), decisiones de arquitectura (`ADR-XXX`) y propuestas (`PRP-XXX`) se encuentra en el directorio **[`DEVELOP/`](DEVELOP/README.md)**.
+
+---
+
+## [v6.0.1] - 2026-11-18: Transición de Identidad y Arquitectura Ecosistema SalviaBIoT
+
+- **Reorientación al Universo Matriz `SalviaBIoT` (*Biological Internet of Things*):**
+  - Limpieza integral de referencias antiguas (`AquaTerra` / `Matrix` / `Ecosistema TerraBit` genérico) en Frontend React 19, Backend FastAPI, lanzador nativo PyWebView, manifiesto PWA, respaldo Tkinter y scripts de empaquetado.
+  - Consolidación de **TerraBit Station** (`TerraBit Station · INTI`) exclusivamente como la capa física de hardware de campo (Capa 1), y posicionamiento de **Mandarino IA Studio** como motor cognitivo modular del ecosistema **SalviaBIoT**.
+  - Preservación 100 % retrocompatible del paquete interno `aquaterra/`, base `data/runtime/aquaterra.db`, variables de entorno y contratos API/Serial.
+  - **Identidad Gráfica de Escritorio, PWA y Barra de Tareas:** Nuevo emblema vectorial/ICO `salviabiot.ico` (brote botánico + nodo Bio-IoT en `generar_iconos.py`), `AppUserModelID` explícito (`SalviaBIoT.Desktop.v6`) en `desktop.py` para ícono propio en barra de tareas de Windows, y actualización de accesos directos (`SalviaBIoT.lnk` y `SalviaBIoT (Web).lnk`).
 
 ---
 

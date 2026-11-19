@@ -1,4 +1,4 @@
-"""Pantalla de acceso v5.0 con identidad Bio-IoT TerraBit, tema dual y salida segura."""
+"""Pantalla de acceso v5.0 con identidad Bio-IoT SalviaBIoT, tema dual y salida segura."""
 
 from __future__ import annotations
 
@@ -44,12 +44,12 @@ class VistaLogin(ttk.Frame):
             lienzo.create_image(0, 0, image=self._imagen_fondo, anchor="nw")
 
         lienzo.create_text(
-            450, 56, text="AQUATERRA MATRIX", font=("Segoe UI", 30, "bold"), fill="#f1f5f9"
+            450, 56, text="SALVIABIOT", font=("Segoe UI", 30, "bold"), fill="#f1f5f9"
         )
         lienzo.create_text(
             450,
             96,
-            text="Centro de Mando Agronómico, Ecológico y Bio-IoT · Ecosistema TerraBit",
+            text="Centro de Mando Ambiental, Agronómico y Bio-IoT · Ecosistema SalviaBIoT",
             font=("Segoe UI", 11),
             fill="#cbd5e1",
         )

@@ -239,7 +239,7 @@ export function CommandPalette({
           {consulta.trim().length >= 2 && (
             <section aria-label="Hallazgos en bitácora y sistema">
               <div className="mb-1.5 flex items-center justify-between px-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-                <span>Resultados en AquaTerra</span>
+                <span>Resultados en SalviaBIoT</span>
                 {buscando && <span>Buscando…</span>}
               </div>
               {!buscando && resultados.length === 0 ? (

@@ -455,7 +455,7 @@ export function HardwarePage() {
               {archivosSd.length === 0 ? (
                 <div className="rounded-xl bg-[var(--bg-elevated)] p-5 text-center text-xs text-[var(--text-secondary)]">
                   Ejecuta un escaneo para listar archivos históricos generados
-                  por nodos TerraBit, InBeersa, Sigatoka o Conservación.
+                  por nodos TerraBit Station, InBeersa, Sigatoka o Conservación.
                 </div>
               ) : (
                 archivosSd.map((a) => (

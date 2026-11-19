@@ -75,7 +75,7 @@ class DespachadorNotificaciones:
             )
 
         payload = {
-            "origen": "AquaTerra_Matrix_v4.2",
+            "origen": "SalviaBIoT_v6.0",
             "evento": evento,
             "mensaje_whatsapp_telegram": mensaje_ejecutivo,
             "metadatos": metadatos or {},

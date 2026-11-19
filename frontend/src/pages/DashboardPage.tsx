@@ -201,7 +201,7 @@ export function DashboardPage() {
     try {
       await api.post("/api/estaciones/sembrar-base");
       await recargarGlobal();
-      toast.success("Estaciones base TerraBit sembradas en SQLite WAL.");
+      toast.success("Estaciones base (TerraBit Station & InBeersa) sembradas en SQLite WAL.");
     } catch (err) {
       toast.error(
         err instanceof Error ? err.message : "No se pudieron sembrar estaciones."
@@ -388,7 +388,7 @@ export function DashboardPage() {
               className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-strong)] bg-[var(--bg-surface)] px-3.5 py-2 text-xs font-semibold text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
             >
               <Radio className="h-3.5 w-3.5 text-[var(--accent-primary)]" aria-hidden="true" />
-              {sembrando ? "Sembrando…" : "Sembrar nodos TerraBit"}
+              {sembrando ? "Sembrando…" : "Sembrar estaciones base"}
             </button>
           )}
           <button
@@ -635,7 +635,7 @@ export function DashboardPage() {
               <select
                 value={filtroTipo}
                 onChange={(e) => setFiltroTipo(e.target.value)}
-                aria-label="Filtrar por familia TerraBit"
+                aria-label="Filtrar por familia de estación"
                 className="h-8 rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-2.5 text-xs text-[var(--text-primary)]"
               >
                 <option value="">Todas las familias</option>

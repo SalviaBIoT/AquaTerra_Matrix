@@ -258,7 +258,7 @@ export function ParcelsPage() {
           </h1>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">
             Registro agronómico, textura edáfica, vinculación con estaciones
-            TerraBit y régimen de riego automatizado.
+            TerraBit Station y régimen de riego automatizado.
           </p>
         </div>
 

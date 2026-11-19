@@ -14,6 +14,7 @@ import {
   RefreshCw,
   Search,
   Settings,
+  Sprout,
   Sun,
   Wifi,
   X,
@@ -187,15 +188,15 @@ export function AppShell({ children }: { children: ReactNode }) {
             className="flex items-center gap-2.5 text-left"
           >
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-primary-soft)] text-[var(--accent-primary)]">
-              <Droplets className="h-4 w-4" aria-hidden="true" />
+              <Sprout className="h-4 w-4" aria-hidden="true" />
             </span>
             {(modoMovil || !colapsado) && (
               <div className="min-w-0">
-                <div className="truncate text-sm font-bold tracking-tight text-[var(--text-primary)]">
-                  AquaTerra
+                <div className="truncate text-sm font-extrabold tracking-tight text-[var(--text-primary)]">
+                  Salvia<span className="text-[var(--accent-primary)]">BIoT</span>
                 </div>
                 <div className="font-mono text-[10px] text-[var(--text-muted)]">
-                  Matrix v{estadoSistema?.version_app ?? "6.0.0"}
+                  Bio-IoT v{estadoSistema?.version_app ?? "6.0.0"}
                 </div>
               </div>
             )}

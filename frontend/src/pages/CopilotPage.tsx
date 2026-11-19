@@ -776,7 +776,7 @@ export function CopilotPage() {
                 {motorActivoNombre}
               </span>
               {canalActivo === "general" ? (
-                <Badge tono="neutral">Asistente Global TerraBit</Badge>
+                <Badge tono="neutral">Asistente Global SalviaBIoT</Badge>
               ) : (
                 entradaFocal && (
                   <SeveridadBadge severidad={entradaFocal.severidad} />
@@ -797,7 +797,7 @@ export function CopilotPage() {
               )}
             </div>
             <p className="text-xs text-[var(--text-secondary)]">
-              Conversaciones modulares por estación con memoria aislada y visión global
+              Motor cognitivo modular con memoria aislada por estación y visión global SalviaBIoT
             </p>
           </div>
         </div>
@@ -885,7 +885,7 @@ export function CopilotPage() {
               <span className="font-semibold text-[var(--text-primary)]">
                 {estacionFocalObj
                   ? `Hilo: ${estacionFocalObj.nombre}`
-                  : "Asistente Global TerraBit"}
+                  : "Asistente Global SalviaBIoT"}
               </span>
               {estacionFocalObj && (
                 <span className="hidden font-mono text-[11px] text-[var(--text-muted)] sm:inline">
@@ -962,7 +962,7 @@ export function CopilotPage() {
                 <p className="mt-2 max-w-xl text-xs leading-relaxed text-[var(--text-secondary)] sm:text-sm">
                   {estacionFocalObj
                     ? "Hilo aislado exclusivamente para este nodo. Pregúntame por sus lecturas, pide un reporte o evalúa calibraciones dentro de cotas."
-                    : "Elige un nodo a la izquierda para conversar sobre una estación puntual o inicia aquí una consulta directa sobre todo TerraBit."}
+                    : "Elige una estación a la izquierda para conversar sobre un nodo puntual o inicia aquí una consulta directa sobre todo el ecosistema SalviaBIoT."}
                 </p>
 
                 {mensajesCanal.length > 0 && (
